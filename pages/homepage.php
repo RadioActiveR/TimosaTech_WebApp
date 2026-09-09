@@ -4,11 +4,32 @@
  * http://localhost/TimosaTech/index.php)
  */
 
+session_start();
+
+require_once __DIR__ . '/../includes/db.php';
+
+$auth_error = $_SESSION['auth_error'] ?? null;
+$auth_tab   = $_SESSION['auth_tab']   ?? null;
+$auth_old_input = $_SESSION['auth_old_input'] ?? [];
+unset($_SESSION['auth_error'], $_SESSION['auth_tab']);
+
+$is_logged_in = isset($_SESSION['u_id']);
+$user_name    = $_SESSION['username'] ?? '';
+$is_admin     = ($_SESSION['user_role'] ?? '') === 'admin';
+
 $page_title = "Timosa Tech - Homepage";
 
+$categories = [
+    'all'          => 'All Products',
+    'computers'    => 'PCs & Workstations',
+    'printers'     => 'Printers & Supplies',
+    'networking'   => 'Networking Equipment',
+    'accessories'  => 'Peripherals & Parts'
+];
+
 $nav_links = [
-    ["label" => "Home",     "href" => "index.php", "active" => true],
-    ["label" => "Shop",     "href" => "#"],
+    ["label" => "Home",     "href" => "../index.php", "active" => true],
+    ["label" => "Shop",     "href" => "shop.php"],
     ["label" => "Services", "href" => "#"],
     ["label" => "About",    "href" => "#"],
     ["label" => "Contact",  "href" => "#"],
@@ -37,27 +58,6 @@ $services = [
     ],
 ];
 
-$products = [
-    [
-        "name"  => "Pro-Series Workstation Rig",
-        "desc"  => "Intel Xeon processor, 64GB ECC RAM, NVIDIA RTX Studio GPU. Assembled and bench-tested.",
-        "price" => 2499.00,
-        "image"  => "../images/workstation-rig.png",
-    ],
-    [
-        "name"  => "Timosa Dual-Band Router Pro",
-        "desc"  => "Next-gen network controller, low-latency gaming priority engine, enterprise-grade firewall.",
-        "price" => 189.00,
-        "image"  => "../images/timosa-router.png",
-    ],
-    [
-        "name"  => "Ultra-Fast Office LaserJet",
-        "desc"  => "Fast duplex network printing, low-cost toner, robust physical scanner sheet feeder.",
-        "price" => 450.00,
-        "image"  => "../images/office-laserjet.png",
-    ],
-];
-
 $features = [
     [
         "title" => "Reliable Technology",
@@ -83,8 +83,8 @@ $features = [
 
 $footer_links = [
     "Quick Links" => [
-        ["Home", "index.php"],
-        ["Shop Hardware", "#"],
+        ["Home", "../index.php"],
+        ["Shop Hardware", "shop.php"],
         ["About Us", "#"],
         ["Contact Us", "#"],
         ["Privacy Policy", "#"],
@@ -97,7 +97,6 @@ $footer_links = [
     ],
 ];
 
-/* INFO: Helper Function for SVG (icons obvs by AI) */
 function icon(string $name): void {
     $icons = [
         "monitor"  => '<path d="M4 5h16v10H4z"/><path d="M9 19h6M12 15v4"/>',
@@ -111,7 +110,7 @@ function icon(string $name): void {
         "tower"    => '<rect x="7" y="3" width="10" height="18" rx="1.5"/><path d="M10 7h4M10 11h4M10 15h1.5"/>',
         "router"   => '<rect x="3" y="10" width="18" height="7" rx="1.5"/><path d="M7 10V7a2 2 0 0 1 2-2M17 10V7a2 2 0 0 0-2-2M7 17v2M11 17v2M15 17v2"/>',
 
-        "facebook"  => '<circle cx="12" cy="12" r="11" fill="#0D192B" stroke="none"/><path d="M13.5 12h1.25l.5-2.5h-1.75V8.25c0-.655 0-1.25 1.25-1.25h.75V4.845c-.163-.022-.802-.095-1.475-.095-1.48 0-2.522.903-2.522 2.565V9.5H10v2.5h1.515V18h2 Johns-v-6z" fill="#00E5FF" stroke="none"/>',
+        "facebook"  => '<circle cx="12" cy="12" r="11" fill="#0D192B" stroke="none"/><path d="M13.5 12h1.25l.5-2.5h-1.75V8.25c0-.655 0-1.25 1.25-1.25h.75V4.845c-.163-.022-.802-.095-1.475-.095-1.48 0-2.522.903-2.522 2.565V9.5H10v2.5h1.515V18h2v-6z" fill="#00E5FF" stroke="none"/>',
         "twitter"   => '<circle cx="12" cy="12" r="11" fill="#0D192B" stroke="none"/><path d="M17.33 8.26a4.8 4.8 0 0 1-1.41.39 2.5 2.5 0 0 0 1.08-1.36 5 5 0 0 1-1.7.62 2.5 2.5 0 0 0-4.25 2.28 7.08 7.08 0 0 1-5.16-2.61 2.5 2.5 0 0 0 .77 3.33 2.46 2.46 0 0 1-1.13-.31v.03a2.5 2.5 0 0 0 2 2.45 2.5 2.5 0 0 1-1.13.04 2.5 2.5 0 0 0 2.33 1.74 5.02 5.02 0 0 1-3.7 1.04 7.07 7.07 0 0 0 3.83 1.12c4.6 0 7.12-3.81 7.12-7.12v-.32a5.1 5.1 0 0 0 1.25-1.29z" fill="#00E5FF" stroke="none"/>',
         "linkedin"  => '<circle cx="12" cy="12" r="11" fill="#0D192B" stroke="none"/><path d="M8.33 7.33a1 1 0 1 0 0 2 1 1 0 0 0 0-2zM7.5 10.33h1.67V16.67H7.5V10.33zm4 0h1.6v.87h.03a1.76 1.76 0 0 1 1.57-.87c1.68 0 1.97 1.1 1.97 2.54v3.8H15.03v-3.35c0-.8-.01-1.83-1.1-1.83-1.1 0-1.28.87-1.28 1.77v3.41H11.5v-6.34z" fill="#00E5FF" stroke="none"/>',
         "instagram" => '<circle cx="12" cy="12" r="11" fill="#0D192B" stroke="none"/><rect x="6.67" y="6.67" width="10.66" height="10.66" rx="3" stroke="#00E5FF" stroke-width="1.3" fill="none"/><circle cx="12" cy="12" r="2.67" stroke="#00E5FF" stroke-width="1.3" fill="none"/><circle cx="15" cy="9" r="0.67" fill="#00E5FF" stroke="none"/>',
@@ -119,6 +118,17 @@ function icon(string $name): void {
     echo '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
         . ($icons[$name] ?? $icons["monitor"]) . '</svg>';
 }
+
+$stmt = $pdo->prepare("
+    SELECT p.*, i.image_data, i.mime_type 
+    FROM products p 
+    LEFT JOIN images i ON p.image_id = i.image_id 
+    ORDER BY p.price DESC 
+    LIMIT 3
+");
+$stmt->execute();
+$products = $stmt->fetchAll();
+
 ?>
 
 <!DOCTYPE html>
@@ -133,7 +143,7 @@ function icon(string $name): void {
 
 <body>
 
-  <!--INFO: NAVBAR SECTION-->
+  <!-- NAVBAR SECTION -->
   <header class="navbar">
     <div class="container">
       <div class="logo">
@@ -148,14 +158,23 @@ function icon(string $name): void {
         <?php endforeach; ?>
       </nav>
       <div class="nav-cta">
-        <a href="#" class="btn btn-outline">Get Support</a>
+        <?php if ($is_logged_in): ?>
+          <span class="nav-greeting">Hi, <?= htmlspecialchars(explode(' ', $user_name)[0]) ?></span>
+    
+          <?php if ($is_admin): ?>
+            <a href="admin-dashboard.php" class="btn btn-outline admin-nav-btn">Admin Dashboard</a>
+          <?php endif; ?>
+    
+          <a href="../includes/logout.php" class="btn btn-outline">Log Out</a>
+        <?php else: ?>
+          <a href="#" class="btn btn-outline" data-open-auth="login">Sign Up / Log In</a>
+        <?php endif; ?>
       </div>
     </div>
   </header>
 
   <main>
-
-    <!--INFO: HERO SECTION-->
+    <!-- HERO SECTION -->
     <section class="hero">
       <div class="container">
         <div class="hero-content">
@@ -165,7 +184,7 @@ function icon(string $name): void {
             long-term diagnostic support. We engineer stability and performance
             into your business infrastructure.</p>
           <div class="hero-buttons">
-            <a href="#" class="btn btn-primary">Shop Products →</a>
+            <a href="shop.php" class="btn btn-primary">Shop Products →</a>
             <a href="#" class="btn btn-secondary">Get Support</a>
           </div>
         </div>
@@ -180,11 +199,13 @@ function icon(string $name): void {
       </div>
     </section>
 
-    <!--INFO: SERVICES SECTION-->
+    <!-- SERVICES SECTION -->
     <section class="services">
       <div class="container">
-        <span class="section-tag">OUR SPECIALIZATION</span>
-        <h2>Technology Solutions You Can Count On</h2>
+        <div class="section-header-center">
+          <span class="section-tag">OUR SPECIALIZATION</span>
+          <h2>Technology Solutions You Can Count On</h2>
+        </div>
 
         <div class="services-grid">
           <?php foreach ($services as $service): ?>
@@ -198,24 +219,40 @@ function icon(string $name): void {
       </div>
     </section>
 
-    <!--INFO: FEATURED PRODUCTS SECTION-->
+    <!-- FEATURED PRODUCTS SECTION -->
     <section class="featured-products">
       <div class="container">
-        <span class="section-tag">OUR HARDWARE SHOWCASE</span>
-        <h2>Featured Products</h2>
+        <div class="section-header-center">
+          <span class="section-tag">OUR HARDWARE SHOWCASE</span>
+          <h2>Featured Products</h2>
+        </div>
 
         <div class="products-grid">
-          <?php foreach ($products as $product): ?>
+          <?php foreach ($products as $product): 
+            $img_src = !empty($product['image_data']) 
+              ? 'data:' . htmlspecialchars($product['mime_type'] ?? 'image/png') . ';base64,' . $product['image_data'] 
+              : '../images/workstation-rig.png';
+          ?>
             <div class="product-card">
               <div class="product-thumb">
-                <img src="<?= htmlspecialchars($product['image']) ?>" alt="<?= htmlspecialchars($product['name']) ?>" class="product-img">
+                <img src="<?= $img_src ?>" 
+                     alt="<?= htmlspecialchars($product['name']) ?>"
+                     style="width: 100%; height: 100%; object-fit: cover; display: block;">
               </div>
               <div class="product-body">
                 <h3><?= htmlspecialchars($product['name']) ?></h3>
-                <p><?= htmlspecialchars($product['desc']) ?></p>
+                <p><?= htmlspecialchars($product['description'] ?? '') ?></p>
                 <div class="product-footer">
                   <span class="product-price">$<?= number_format($product['price'], 2) ?></span>
-                  <a href="#" class="btn btn-outline">View Product</a>
+                  <button class="btn btn-outline view-details-btn" 
+                          data-name="<?= htmlspecialchars($product['name']) ?>"
+                          data-price="$<?= number_format($product['price'], 2) ?>"
+                          data-stock="<?= intval($product['stock']) ?>"
+                          data-category="<?= htmlspecialchars($categories[$product['category']] ?? $product['category']) ?>"
+                          data-desc="<?= htmlspecialchars($product['description'] ?? 'No detailed description available.') ?>"
+                          data-img="<?= $img_src ?>">
+                    View Details
+                  </button>
                 </div>
               </div>
             </div>
@@ -223,16 +260,18 @@ function icon(string $name): void {
         </div>
 
         <div class="center-btn">
-          <a href="#" class="btn btn-outline">View All Products →</a>
+          <a href="shop.php" class="btn btn-outline">View All Products →</a>
         </div>
       </div>
     </section>
 
-    <!--INFO: WHY CHOOSE US SECTION-->
+    <!-- WHY CHOOSE US SECTION -->
     <section class="why-choose-us">
       <div class="container">
-        <span class="section-tag">THE TIMOSA DIFFERENCE</span>
-        <h2>Why Leading Businesses Choose Us</h2>
+        <div class="section-header-center">
+          <span class="section-tag">THE TIMOSA DIFFERENCE</span>
+          <h2>Why Leading Businesses Choose Us</h2>
+        </div>
 
         <div class="features-grid">
           <?php foreach ($features as $feature): ?>
@@ -246,7 +285,7 @@ function icon(string $name): void {
       </div>
     </section>
 
-    <!--INFO: CALL TO ACTION SECTION-->
+    <!-- CALL TO ACTION SECTION -->
     <section class="cta-banner">
       <div class="container">
         <h2>Need Technical Support?</h2>
@@ -259,9 +298,32 @@ function icon(string $name): void {
           </svg>
         </a>
       </div>
+    </section>
   </main>
 
-  <!--INFO: FOOTER SECTION-->
+  <!-- PRODUCT DETAILS MODAL -->
+  <div class="modal-overlay" id="productModal">
+    <div class="product-modal">
+      <button class="modal-close" id="closeModal">&times;</button>
+      <div class="modal-image-container">
+        <img id="modalImg" src="" alt="Product Image">
+      </div>
+      <div class="modal-details">
+        <h2 id="modalTitle">Product Title</h2>
+        <div class="modal-meta">
+          <span>Category: <strong id="modalCategory" style="color:#fff;">-</strong></span>
+          <span>In Stock: <strong id="modalStock" style="color:#fff;">-</strong></span>
+        </div>
+        <p class="modal-desc" id="modalDesc"></p>
+        <div class="modal-footer">
+          <span class="modal-price" id="modalPrice">$0.00</span>
+          <button class="btn btn-primary">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER SECTION -->
   <footer class="footer">
     <div class="container">
       <div class="footer-grid">
@@ -299,10 +361,43 @@ function icon(string $name): void {
       </div>
 
       <div class="footer-bottom">
-        <p>&copy; <?= date("Y") ?> Timosa Tech. All rights reserved. All specifications subject to technical review.</p>
+        <p>&copy; <?= date("Y") ?> TimosaTech. All rights reserved. All specifications subject to technical review.</p>
       </div>
     </div>
   </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const modal = document.getElementById('productModal');
+      const closeModal = document.getElementById('closeModal');
+
+      document.querySelectorAll('.view-details-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+          e.preventDefault();
+          document.getElementById('modalTitle').textContent = button.dataset.name;
+          document.getElementById('modalPrice').textContent = button.dataset.price;
+          document.getElementById('modalCategory').textContent = button.dataset.category;
+          document.getElementById('modalStock').textContent = button.dataset.stock;
+          document.getElementById('modalDesc').textContent = button.dataset.desc;
+          document.getElementById('modalImg').src = button.dataset.img;
+          modal.classList.add('active');
+        });
+      });
+
+      if (closeModal) {
+        closeModal.addEventListener('click', () => modal.classList.remove('active'));
+      }
+
+      if (modal) {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) modal.classList.remove('active');
+        });
+      }
+    });
+  </script>
+
+  <?php include __DIR__ . '/../includes/auth-modal.php'; ?>
+  <script src="../js/auth.js"></script>
 
 </body>
 </html>
