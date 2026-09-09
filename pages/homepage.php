@@ -7,6 +7,7 @@
 session_start();
 
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/cart-functions.php';
 
 $auth_error = $_SESSION['auth_error'] ?? null;
 $auth_tab   = $_SESSION['auth_tab']   ?? null;
@@ -16,6 +17,7 @@ unset($_SESSION['auth_error'], $_SESSION['auth_tab']);
 $is_logged_in = isset($_SESSION['u_id']);
 $user_name    = $_SESSION['username'] ?? '';
 $is_admin     = ($_SESSION['user_role'] ?? '') === 'admin';
+$cart_count   = $is_logged_in ? get_cart_count($pdo, $_SESSION['u_id']) : 0;
 
 $page_title = "Timosa Tech - Homepage";
 
@@ -159,6 +161,7 @@ $products = $stmt->fetchAll();
       </nav>
       <div class="nav-cta">
         <?php if ($is_logged_in): ?>
+          
           <span class="nav-greeting">Hi, <?= htmlspecialchars(explode(' ', $user_name)[0]) ?></span>
     
           <?php if ($is_admin): ?>
@@ -167,8 +170,11 @@ $products = $stmt->fetchAll();
     
           <a href="../includes/logout.php" class="btn btn-outline">Log Out</a>
         <?php else: ?>
-          <a href="#" class="btn btn-outline" data-open-auth="login">Sign Up / Log In</a>
+          <a href="#" class="btn btn-outline" data-open-auth="login">Login</a>
         <?php endif; ?>
+        <button type="button" class="btn btn-outline cart-nav-btn" data-open-cart>
+            Cart <span class="cart-count-badge" style="<?= $cart_count === 0 ? 'display:none;' : '' ?>"><?= $cart_count ?></span>
+          </button>
       </div>
     </div>
   </header>
@@ -245,6 +251,7 @@ $products = $stmt->fetchAll();
                 <div class="product-footer">
                   <span class="product-price">$<?= number_format($product['price'], 2) ?></span>
                   <button class="btn btn-outline view-details-btn" 
+                          data-id="<?= $product['product_id'] ?>"
                           data-name="<?= htmlspecialchars($product['name']) ?>"
                           data-price="$<?= number_format($product['price'], 2) ?>"
                           data-stock="<?= intval($product['stock']) ?>"
@@ -317,7 +324,7 @@ $products = $stmt->fetchAll();
         <p class="modal-desc" id="modalDesc"></p>
         <div class="modal-footer">
           <span class="modal-price" id="modalPrice">$0.00</span>
-          <button class="btn btn-primary">Add to Cart</button>
+          <button class="btn btn-primary" id="modalAddToCart" type="button">Add to Cart</button>
         </div>
       </div>
     </div>
@@ -370,10 +377,22 @@ $products = $stmt->fetchAll();
     document.addEventListener('DOMContentLoaded', () => {
       const modal = document.getElementById('productModal');
       const closeModal = document.getElementById('closeModal');
+      const isLoggedIn = <?= $is_logged_in ? 'true' : 'false' ?>;
 
       document.querySelectorAll('.view-details-btn').forEach(button => {
         button.addEventListener('click', (e) => {
           e.preventDefault();
+
+          if (!isLoggedIn) {
+            const authOverlay = document.getElementById('authOverlay');
+            if (authOverlay) {
+              authOverlay.classList.add('active');
+              document.body.style.overflow = 'hidden';
+            }
+            return;
+          }
+
+          modal.dataset.currentProductId = button.dataset.id;
           document.getElementById('modalTitle').textContent = button.dataset.name;
           document.getElementById('modalPrice').textContent = button.dataset.price;
           document.getElementById('modalCategory').textContent = button.dataset.category;
@@ -397,7 +416,9 @@ $products = $stmt->fetchAll();
   </script>
 
   <?php include __DIR__ . '/../includes/auth-modal.php'; ?>
+  <?php include __DIR__ . '/../includes/cart-modal.php'; ?>
   <script src="../js/auth.js"></script>
+  <script src="../js/cart.js"></script>
 
 </body>
 </html>
