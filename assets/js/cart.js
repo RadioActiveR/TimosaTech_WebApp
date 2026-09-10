@@ -1,6 +1,12 @@
 /* Timosa Tech — Cart modal (open/close, add/update/remove via AJAX,
    select-before-checkout) + quick add-to-cart buttons on product cards */
 
+/* INFO: Linked Files:
+
+    includes/cart-handler
+
+*/
+
 document.addEventListener("DOMContentLoaded", function () {
   const cartOverlay     = document.getElementById("cartOverlay");
   const cartClose       = document.getElementById("cartClose");

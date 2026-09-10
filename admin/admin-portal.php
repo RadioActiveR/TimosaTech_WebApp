@@ -1,6 +1,16 @@
 <?php
+
+/* INFO: Linked Files:
+
+    config/db.php
+    includes/product-functions.php
+    includes/order-admin-functions.php
+    includes/activity-log-functions.php
+
+*/
+
 session_start();
-require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/product-functions.php';
 require_once __DIR__ . '/../includes/order-admin-functions.php';
 require_once __DIR__ . '/../includes/activity-log-functions.php';
@@ -12,6 +22,7 @@ if (!isset($_SESSION['u_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
 }
 
 $page_title = "Timosa Tech - Admin Dashboard";
+$current_page = 'admin';
 $user_name = $_SESSION['username'] ?? 'Admin';
 
 $admin_tabs = [
@@ -36,8 +47,6 @@ $order_statuses = [
     'cancelled'  => 'Cancelled',
 ];
 
-// INFO (CRUD log): the fixed set of action/entity values activity_logs
-// rows can have — keeps the log filterable instead of relying on free text.
 $log_actions = [
     'create'        => 'Create',
     'update'        => 'Update',
@@ -126,8 +135,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $new_status    = $_POST['status'] ?? '';
 
         if ($order_id_post !== '' && array_key_exists($new_status, $order_statuses)) {
-            // Fetched before the update so we can log the from -> to transition;
-            // also doubles as the "does this order still exist" check.
             $existing_order = get_order_admin($pdo, $order_id_post);
 
             if ($existing_order && update_order_status($pdo, $order_id_post, $new_status, $_SESSION['u_id'])) {
@@ -147,14 +154,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
     } elseif ($_POST['action'] === 'delete_order') {
         $order_id_post  = trim($_POST['order_id'] ?? '');
-        // Fetched before the delete since there's nothing left to describe afterward.
         $existing_order = $order_id_post !== '' ? get_order_admin($pdo, $order_id_post) : null;
 
         if ($existing_order && delete_order_admin($pdo, $order_id_post)) {
             log_activity(
                 $pdo, $_SESSION['u_id'], 'delete', 'order', $order_id_post,
                 "Deleted order for {$existing_order['recipient_name']} totaling $" . number_format($existing_order['total_amount'], 2)
-            );
+          );
             $message = "Order #" . $order_id_post . " was deleted.";
         } else {
             $error = "Could not delete that order.";
@@ -221,6 +227,15 @@ if ($active_tab === 'crud_log') {
     $log_search    = trim($_GET['log_search'] ?? '');
     $activity_logs = get_activity_logs($pdo, $log_action_filter, $log_entity_filter, $log_search);
 }
+
+// Fetch data for Metrics tab
+$metrics_data = [];
+if ($active_tab === 'metrics') {
+    $total_users = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+    $total_products = $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
+    $total_orders = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
+    $total_revenue = $pdo->query("SELECT SUM(total_amount) FROM orders WHERE status != 'cancelled'")->fetchColumn() ?: 0;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -228,7 +243,10 @@ if ($active_tab === 'crud_log') {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= htmlspecialchars($page_title) ?></title>
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/master.css">
   <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../assets/css/profile.css">
   <style>
     .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     .admin-table th, .admin-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--bg-card-border, #1a2f4c); color: #cbd5e1; }
@@ -292,28 +310,10 @@ if ($active_tab === 'crud_log') {
 </head>
 <body class="admin-body">
 
-  <header class="navbar admin-navbar">
-    <div class="container admin-nav-container">
-      <div class="admin-brand">
-        <a href="homepage.php" class="logo">
-          <img class="img-logo" src="../images/TimosaTechLogo.png" alt="Logo">
-          <span class="logoname1">TIMOSA</span><span class="logoname2">TECH</span>
-        </a>
-        <span class="admin-badge">ADMINISTRATOR DASHBOARD</span>
-      </div>
-      <div class="nav-cta">
-
-        <span class="nav-greeting">Hi, <?= htmlspecialchars(
-            mb_strlen($user_name) > 13 
-                ? explode(' ', trim($user_name))[0] 
-                : $user_name
-        ) ?></span>
-
-        <a href="homepage.php" class="btn btn-outline admin-nav-btn">View Main Site</a>
-        <a href="../includes/logout.php" class="btn btn-outline">Log Out</a>
-      </div>
-    </div>
-  </header>
+  <!-- NAVBAR -->
+  <?php 
+    require_once __DIR__ . '/../components/header.php'; 
+  ?>
 
   <div class="admin-layout container">
     <nav class="admin-tabs-nav">
@@ -372,7 +372,7 @@ if ($active_tab === 'crud_log') {
                 <div class="auth-field" style="flex: 1;">
                   <label>Stock Quantity *</label>
                   <input type="number" name="stock" value="<?= htmlspecialchars($edit_product['stock'] ?? '10') ?>" required>
-                </div>
+              </div>
               </div>
 
               <div class="auth-field">
@@ -408,7 +408,7 @@ if ($active_tab === 'crud_log') {
                   <td>#<?= $p['product_id'] ?></td>
                   <td><strong><?= htmlspecialchars($p['name']) ?></strong></td>
                   <td><?= htmlspecialchars($p['category']) ?></td>
-                  <td>$<?= number_format($p['price'], 2) ?></td>
+                  <td>₱<?= number_format($p['price'], 2) ?></td>
                   <td><?= $p['stock'] ?></td>
                   <td>
                     <div class="admin-row-actions">
@@ -484,11 +484,11 @@ if ($active_tab === 'crud_log') {
                   <button type="submit" class="btn btn-primary" style="padding: 9px 18px; font-size: 0.85rem;">Save Status</button>
                 </form>
 
-                <form method="post" onsubmit="return confirm('Delete order #<?= htmlspecialchars($view_order['order_id']) ?>? This cannot be undone.');" style="margin-top: 14px;">
+              <form method="post" onsubmit="return confirm('Delete order #<?= htmlspecialchars($view_order['order_id']) ?>? This cannot be undone.');" style="margin-top: 14px;">
                   <input type="hidden" name="action" value="delete_order">
                   <input type="hidden" name="order_id" value="<?= htmlspecialchars($view_order['order_id']) ?>">
                   <button type="submit" class="btn btn-outline" style="border-color: #f87171; color: #f87171; padding: 8px 16px; font-size: 0.8rem;">Delete Order</button>
-                </form>
+              </form>
 
                 <?php if (!empty($view_order_log)): ?>
                   <h3 style="margin-top: 18px;">Status History</h3>
@@ -519,16 +519,15 @@ if ($active_tab === 'crud_log') {
                 <?php foreach ($view_order_items as $item): ?>
                   <tr>
                     <td><?= htmlspecialchars($item['product_name']) ?></td>
-                    <td>$<?= number_format($item['unit_price'], 2) ?></td>
+                    <td>₱<?= number_format($item['unit_price'], 2) ?></td>
                     <td><?= intval($item['quantity']) ?></td>
-                    <td>$<?= number_format($item['subtotal'], 2) ?></td>
+                    <td>₱<?= number_format($item['subtotal'], 2) ?></td>
                   </tr>
                 <?php endforeach; ?>
               </tbody>
             </table>
 
           <?php elseif (isset($_GET['view_id'])): ?>
-            <!-- Someone followed a link to an order that no longer exists -->
             <p style="color: #f87171;">Order not found.</p>
             <a href="?tab=orders" class="btn btn-outline" style="margin-top: 15px;">&larr; Back to Orders</a>
 
@@ -574,7 +573,7 @@ if ($active_tab === 'crud_log') {
                         <span style="color: var(--text-faint); font-size: 0.78rem;"><?= htmlspecialchars($o['email']) ?></span>
                       </td>
                       <td><?= date('M j, Y', strtotime($o['created_at'])) ?></td>
-                      <td>$<?= number_format($o['total_amount'], 2) ?></td>
+                      <td>₱<?= number_format($o['total_amount'], 2) ?></td>
                       <td>
                         <span class="status-badge status-<?= htmlspecialchars($o['status']) ?>">
                           <?= htmlspecialchars($order_statuses[$o['status']] ?? $o['status']) ?>
@@ -589,6 +588,33 @@ if ($active_tab === 'crud_log') {
               </table>
             <?php endif; ?>
           <?php endif; ?>
+        </section>
+
+      <?php elseif ($active_tab === 'metrics'): ?>
+        <section class="admin-panel">
+          <h2>Metrics Dashboard</h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">
+            Overview of key system metrics and statistics.
+          </p>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+            <div class="order-detail-panel">
+              <h3>Total Users</h3>
+              <p style="font-size: 1.8rem; font-weight: bold; color: #0adde0; margin-top: 10px;"><?= number_format($total_users) ?></p>
+            </div>
+            <div class="order-detail-panel">
+              <h3>Total Products</h3>
+              <p style="font-size: 1.8rem; font-weight: bold; color: #4ade80; margin-top: 10px;"><?= number_format($total_products) ?></p>
+            </div>
+            <div class="order-detail-panel">
+              <h3>Total Orders</h3>
+              <p style="font-size: 1.8rem; font-weight: bold; color: #4f8ff7; margin-top: 10px;"><?= number_format($total_orders) ?></p>
+            </div>
+            <div class="order-detail-panel">
+              <h3>Total Revenue</h3>
+              <p style="font-size: 1.8rem; font-weight: bold; color: #facc15; margin-top: 10px;">₱<?= number_format($total_revenue, 2) ?></p>
+            </div>
+          </div>
         </section>
 
       <?php elseif ($active_tab === 'crud_log'): ?>

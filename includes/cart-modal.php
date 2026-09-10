@@ -13,6 +13,13 @@
  * submission itself (JS only handles live totals / select-all / enabling
  * the button).
  */
+
+/* INFO: Linked Files:
+
+    cart-functions.php
+
+*/
+
 require_once __DIR__ . '/cart-functions.php';
 
 $cart_items = [];
@@ -63,7 +70,7 @@ if (isset($_SESSION['u_id'])) {
               <img src="<?= $img_src ?>" alt="<?= htmlspecialchars($item['name']) ?>">
               <div class="cart-item-info">
                 <h4><?= htmlspecialchars($item['name']) ?></h4>
-                <span class="cart-item-price">$<?= number_format($item['price'], 2) ?></span>
+                <span class="cart-item-price">₱<?= number_format($item['price'], 2) ?></span>
                 <div class="cart-qty-controls">
                   <button type="button" class="cart-qty-btn" data-delta="-1" aria-label="Decrease quantity">&minus;</button>
                   <span class="cart-qty-value"><?= intval($item['quantity']) ?></span>
@@ -71,7 +78,7 @@ if (isset($_SESSION['u_id'])) {
                   <button type="button" class="cart-remove-btn">Remove</button>
                 </div>
               </div>
-              <div class="cart-item-subtotal">$<?= number_format($item['price'] * $item['quantity'], 2) ?></div>
+              <div class="cart-item-subtotal">₱<?= number_format($item['price'] * $item['quantity'], 2) ?></div>
             </div>
           <?php endforeach; ?>
         <?php endif; ?>
@@ -80,7 +87,7 @@ if (isset($_SESSION['u_id'])) {
       <div class="cart-modal-footer">
         <div class="cart-total-row">
           <span>Total (selected)</span>
-          <strong id="cartTotalValue">$<?= number_format($cart_total, 2) ?></strong>
+          <strong id="cartTotalValue">₱<?= number_format($cart_total, 2) ?></strong>
         </div>
         <button type="submit" class="btn btn-primary cart-order-btn" id="cartOrderBtn"
            <?= empty($cart_items) ? 'disabled' : '' ?>>

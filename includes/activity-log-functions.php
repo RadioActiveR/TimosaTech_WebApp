@@ -1,5 +1,5 @@
 <?php
-/* INFO: Central CRUD activity log for the Admin Dashboard "CRUD Log" tab.
+/* INFO: Central CRUD activity log for the Admin Portal "CRUD Log" tab.
  * Every admin create/update/delete/status-change action across products,
  * orders, and (eventually) users writes one row here via log_activity().
  * Separate file since logging is a cross-cutting concern used by multiple

@@ -1,7 +1,16 @@
 <?php
+
+/* INFO: Linked Files:
+
+    config/db.php
+    includes/cart-functions.php
+
+*/
+
 session_start();
-require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/cart-functions.php';
+require_once __DIR__ . '/../helpers/icons.php';
 
 $is_logged_in = isset($_SESSION['u_id']);
 $user_name    = $_SESSION['username'] ?? '';
@@ -9,6 +18,7 @@ $is_admin     = ($_SESSION['user_role'] ?? '') === 'admin';
 $cart_count   = $is_logged_in ? get_cart_count($pdo, $_SESSION['u_id']) : 0;
 
 $page_title = "Timosa Tech - Store";
+$current_page = 'shop';
 
 // Category Filter Logic
 $selected_category = $_GET['category'] ?? 'all';
@@ -42,85 +52,27 @@ $categories = [
     'networking'   => 'Networking Equipment',
     'accessories'  => 'Peripherals & Parts'
 ];
+
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= htmlspecialchars($page_title) ?></title>
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/master.css">
   <link rel="stylesheet" href="../styles/styles.css">
-  <style>
-    .profile-circle-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      padding: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-    }
-    .profile-circle-btn svg {
-      width: 20px;
-      height: 20px;
-    }
-    .profile-circle-btn:hover {
-      background-color: rgba(255, 255, 255, 0.1);
-      transform: scale(1.05);
-    }
-  </style>
+  <link rel="stylesheet" href="../assets/css/profile.css">
+  <link rel="stylesheet" href="../assets/css/shop-cards.css">
 </head>
 <body>
 
   <!-- NAVBAR -->
-  <header class="navbar">
-    <div class="container">
-      <div class="logo">
-        <img class="img-logo" src="../images/TimosaTechLogo.png" alt="Timosa Tech Logo">
-        <a class="logoname1" href="../index.php">TIMOSA</a><a class="logoname2" href="../index.php">TECH</a>
-      </div>
-      <nav class="nav-links">
-        <a href="../index.php">Home</a>
-        <a href="shop.php" class="active">Shop</a>
-        <a href="#">Services</a>
-        <a href="#">About</a>
-        <a href="#">Contact</a>
-      </nav>
-      <div class="nav-cta">
-        <?php if ($is_logged_in): ?>
-          
-          <span class="nav-greeting">Hi, <?= htmlspecialchars(
-              mb_strlen($user_name) > 13 
-                  ? explode(' ', trim($user_name))[0] 
-                  : $user_name
-          ) ?></span>
-
-          <?php if ($is_admin): ?>
-            <a href="admin-dashboard.php" class="btn btn-outline admin-nav-btn">Admin Dash</a>
-          <?php endif; ?>
-
-          <button type="button" class="btn btn-outline cart-nav-btn" data-open-cart>
-            Cart <span class="cart-count-badge" style="<?= $cart_count === 0 ? 'display:none;' : '' ?>"><?= $cart_count ?></span>
-          </button>
-
-          <!-- Circular Profile Button -->
-          <a href="profile.php" class="btn btn-outline profile-circle-btn" title="My Profile" aria-label="My Profile">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-          </a>
-
-        <?php else: ?>
-          <a href="#" class="btn btn-outline" data-open-auth="login">Log In</a>
-        <?php endif; ?>
-
-          
-
-      </div>
-    </div>
-  </header>
+  <?php 
+    require_once __DIR__ . '/../components/header.php'; 
+  ?>
 
   <main class="container shop-main">
     <div class="shop-header">
@@ -162,7 +114,7 @@ $categories = [
             <?php foreach ($products as $product): 
               $img_src = !empty($product['image_data']) 
                 ? 'data:' . htmlspecialchars($product['mime_type'] ?? 'image/png') . ';base64,' . $product['image_data'] 
-                : '../images/workstation-rig.png';
+                : '../assets/images/workstation-rig.png';
             ?>
               <div class="product-card">
                 <div class="shop-product-thumb">
@@ -171,7 +123,12 @@ $categories = [
                 <div class="product-body">
                   <h3><?= htmlspecialchars($product['name']) ?></h3>
                   <div class="product-footer">
-                    <span class="product-price">$<?= number_format($product['price'], 2) ?></span>
+                    <div class="product-info-row">
+                      <span class="product-price">₱<?= number_format($product['price'], 2) ?></span>
+                      <span class="product-stock<?= intval($product['stock']) <= 0 ? ' out-of-stock' : '' ?>">
+                        <?= intval($product['stock']) > 0 ? intval($product['stock']) . ' in stock' : 'Out of stock' ?>
+                      </span>
+                    </div>
                     <div class="product-actions">
                       <button type="button"
                               class="quick-add-btn"
@@ -190,7 +147,7 @@ $categories = [
                       <button class="btn btn-outline view-details-btn" 
                               data-id="<?= $product['product_id'] ?>"
                               data-name="<?= htmlspecialchars($product['name']) ?>"
-                              data-price="$<?= number_format($product['price'], 2) ?>"
+                              data-price="₱<?= number_format($product['price'], 2) ?>"
                               data-stock="<?= intval($product['stock']) ?>"
                               data-category="<?= htmlspecialchars($categories[$product['category']] ?? $product['category']) ?>"
                               data-desc="<?= htmlspecialchars($product['description'] ?? 'No detailed description available.') ?>"
@@ -208,73 +165,19 @@ $categories = [
     </div>
   </main>
 
-  <!-- PRODUCT DETAILS MODAL -->
-  <div class="modal-overlay" id="productModal">
-    <div class="product-modal">
-      <button class="modal-close" id="closeModal">&times;</button>
-      <div class="modal-image-container">
-        <img id="modalImg" src="" alt="Product Image">
-      </div>
-      <div class="modal-details">
-        <h2 id="modalTitle">Product Title</h2>
-        <div class="modal-meta">
-          <span>Category: <strong id="modalCategory" style="color:#fff;">-</strong></span>
-          <span>In Stock: <strong id="modalStock" style="color:#fff;">-</strong></span>
-        </div>
-        <p class="modal-desc" id="modalDesc"></p>
-        <div class="modal-footer">
-          <span class="modal-price" id="modalPrice">$0.00</span>
-          <button class="btn btn-primary" id="modalAddToCart" type="button">Add to Cart</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <?php include __DIR__ . '/../includes/product-modal.php'; ?>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const modal = document.getElementById('productModal');
-      const closeModal = document.getElementById('closeModal');
-      const isLoggedIn = <?= $is_logged_in ? 'true' : 'false' ?>;
+  <script>window.isLoggedIn = <?= $is_logged_in ? 'true' : 'false' ?>;</script>
+  <script src="../assets/js/product-modal.js"></script>
 
-      document.querySelectorAll('.view-details-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-          e.preventDefault();
-
-          if (!isLoggedIn) {
-            const authOverlay = document.getElementById('authOverlay');
-            if (authOverlay) {
-              authOverlay.classList.add('active');
-              document.body.style.overflow = 'hidden';
-            }
-            return;
-          }
-
-          modal.dataset.currentProductId = button.dataset.id;
-          document.getElementById('modalTitle').textContent = button.dataset.name;
-          document.getElementById('modalPrice').textContent = button.dataset.price;
-          document.getElementById('modalCategory').textContent = button.dataset.category;
-          document.getElementById('modalStock').textContent = button.dataset.stock;
-          document.getElementById('modalDesc').textContent = button.dataset.desc;
-          document.getElementById('modalImg').src = button.dataset.img;
-          modal.classList.add('active');
-        });
-      });
-
-      if (closeModal) {
-        closeModal.addEventListener('click', () => modal.classList.remove('active'));
-      }
-
-      if (modal) {
-        modal.addEventListener('click', (e) => {
-          if (e.target === modal) modal.classList.remove('active');
-        });
-      }
-    });
-  </script>
+  <!-- INFO: FOOTER SECTION -->
+  <?php 
+    require_once __DIR__ . '/../components/footer.php'; 
+  ?>
 
   <?php include __DIR__ . '/../includes/auth-modal.php'; ?>
   <?php include __DIR__ . '/../includes/cart-modal.php'; ?>
-  <script src="../js/auth.js"></script>
-  <script src="../js/cart.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/cart.js"></script>
 </body>
 </html>

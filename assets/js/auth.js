@@ -1,5 +1,11 @@
 /* Timosa Tech — Auth modal (open/close + Login/Sign Up tab switching) */
 
+/* INFO: Linked Files:
+
+    None
+
+*/
+
 document.addEventListener("DOMContentLoaded", function () {
   const overlay   = document.getElementById("authOverlay");
   const openBtns  = document.querySelectorAll("[data-open-auth]");

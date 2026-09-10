@@ -3,8 +3,16 @@
  * shipping information from user_profiles, and submitting to order-handler.php.
  */
 
+/* INFO: Linked Files:
+
+    config/db.php
+    includes/cart-functions.php
+    includes/user-profile-functions.php
+
+*/
+
 session_start();
-require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/cart-functions.php';
 require_once __DIR__ . '/../includes/user-profile-functions.php';
 
@@ -66,7 +74,8 @@ unset($_SESSION['checkout_error']);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checkout | Timosa Tech</title>
-  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../assets/css/variables.css">
   <style>
     .checkout-container {
       max-width: 1100px;

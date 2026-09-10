@@ -1,0 +1,26 @@
+:root {
+  /* Color tokens */
+  --bg1:            #030511;
+  --bg2:            #030712;
+  --bg3:            #040A1A;  
+  --bg4:            #02050C;
+  --bg5:            #0A1123;
+  --bg-raised:      #0d1a2c;
+  --bg-card:        #101f34;
+  --bg-card-border: #1c2f47;
+  --accent-cyan:    #0ADDEE;
+  --accent-blue:    #4f8ff7;
+  --cyan-gradient: linear-gradient(to right, #04E9F9, #033597);
+  --text-primary:   #f3f6fa;
+  --text-muted:     #93a3b8;
+  --text-faint:     #5f7186;
+
+  /* Type */
+  --font-heading: "Orbitron", "Sora", "Segoe UI", sans-serif;
+  --font-body: "Eras ITC", "Inter", "Segoe UI", sans-serif;
+
+  /* Layout */
+  --container-w: 1180px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}

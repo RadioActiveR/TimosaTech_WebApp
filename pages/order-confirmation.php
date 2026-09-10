@@ -1,6 +1,13 @@
 <?php
+
+/* INFO: Linked Files:
+
+    config/db.php
+
+*/
+
 session_start();
-require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../config/db.php';
 
 if (!isset($_SESSION['u_id'])) {
     header("Location: homepage.php");
@@ -49,7 +56,7 @@ $status_labels = [
   <header class="navbar">
     <div class="container">
       <div class="logo">
-        <img class="img-logo" src="../images/TimosaTechLogo.png" alt="Logo">
+        <img class="img-logo" src="../assets/images/TimosaTechLogo.png" alt="Logo">
         <a class="logoname1" href="../index.php">TIMOSA</a><a class="logoname2" href="../index.php">TECH</a>
       </div>
       <nav class="nav-links">
@@ -62,7 +69,7 @@ $status_labels = [
       <div class="nav-cta">
         <span class="nav-greeting">Hi, <?= htmlspecialchars(explode(' ', $user_name)[0]) ?></span>
         <?php if ($is_admin): ?>
-          <a href="admin-dashboard.php" class="btn btn-outline admin-nav-btn">Admin Dashboard</a>
+          <a href="../admin/admin-portal.php" class="btn btn-outline admin-nav-btn">Admin Portal</a>
         <?php endif; ?>
         <a href="../includes/logout.php" class="btn btn-outline">Log Out</a>
       </div>
@@ -99,14 +106,14 @@ $status_labels = [
                 <h4><?= htmlspecialchars($item['product_name']) ?></h4>
                 <span>Qty: <?= intval($item['quantity']) ?> &times; $<?= number_format($item['unit_price'], 2) ?></span>
               </div>
-              <div class="summary-item-subtotal">$<?= number_format($item['subtotal'], 2) ?></div>
+              <div class="summary-item-subtotal">₱<?= number_format($item['subtotal'], 2) ?></div>
             </div>
           <?php endforeach; ?>
         </div>
         <div class="checkout-summary-totals">
-          <div class="summary-row"><span>Subtotal</span><span>$<?= number_format($order['subtotal'], 2) ?></span></div>
+          <div class="summary-row"><span>Subtotal</span><span>₱<?= number_format($order['subtotal'], 2) ?></span></div>
           <div class="summary-row"><span>Shipping</span><span><?= $order['shipping_fee'] > 0 ? '$' . number_format($order['shipping_fee'], 2) : 'Free' ?></span></div>
-          <div class="summary-row summary-total"><span>Total</span><span>$<?= number_format($order['total_amount'], 2) ?></span></div>
+          <div class="summary-row summary-total"><span>Total</span><span>₱<?= number_format($order['total_amount'], 2) ?></span></div>
         </div>
       </aside>
     </div>

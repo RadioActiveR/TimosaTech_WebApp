@@ -1,13 +1,25 @@
 <?php
+
+/* INFO: Linked Files:
+
+    config/db.php
+    includes/user-profile-functions.php
+
+*/
+
 session_start();
-require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/user-profile-functions.php';
+require_once __DIR__ . '/../helpers/icons.php';
 
 // Redirect to home if not logged in
 if (!isset($_SESSION['u_id'])) {
     header('Location: index.php');
     exit;
 }
+
+$current_page = 'profile';
+$user_name    = $_SESSION['username'] ?? '';
 
 $u_id = $_SESSION['u_id'];
 $success_msg = '';
@@ -42,6 +54,8 @@ $orders = get_user_orders($pdo, $u_id);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Profile — Timosa Tech</title>
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/master.css">
   <link rel="stylesheet" href="../styles/styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,29 +64,9 @@ $orders = get_user_orders($pdo, $u_id);
 <body>
 
   <!-- NAVBAR -->
-  <header class="navbar">
-    <div class="container">
-      <a href="../index.php" class="logo">
-        <img src="../assets/logo.png" alt="Timosa Tech Logo" class="img-logo" onerror="this.style.display='none'">
-        <span class="logoname1">TIMOSA</span><span class="logoname2">TECH</span>
-      </a>
-
-      <nav class="nav-links">
-        <a href="../index.php">Home</a>
-        <a href="shop.php">Shop</a>
-        <a href="../index.php#services">Services</a>
-        <a href="profile.php" class="active">My Account</a>
-      </nav>
-
-      <div class="nav-cta">
-        <a href="cart.php" class="btn btn-secondary cart-nav-btn">
-          <span>Cart</span>
-          <span class="cart-count-badge" id="cartCount">0</span>
-        </a>
-        <a href="../actions/logout.php" class="btn btn-outline">Logout</a>
-      </div>
-    </div>
-  </header>
+  <?php 
+    require_once __DIR__ . '/../components/header.php'; 
+  ?>
 
   <!-- MAIN CONTENT -->
   <main class="profile-main">
@@ -228,46 +222,10 @@ $orders = get_user_orders($pdo, $u_id);
     </div>
   </main>
 
-  <!-- FOOTER -->
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-col">
-          <div class="logo">
-            <span class="logoname1">TIMOSA</span><span class="logoname2">TECH</span>
-          </div>
-          <p>Your ultimate destination for premium technology and components.</p>
-        </div>
-        <div class="footer-col">
-          <h4>Navigation</h4>
-          <ul>
-            <li><a href="../index.php">Home</a></li>
-            <li><a href="shop.php">Shop</a></li>
-            <li><a href="profile.php">My Account</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h4>Support</h4>
-          <ul>
-            <li><a href="#">Contact Us</a></li>
-            <li><a href="#">FAQs</a></li>
-            <li><a href="#">Shipping Policy</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h4>Connect</h4>
-          <div class="social-links">
-            <a href="#">FB</a>
-            <a href="#">X</a>
-            <a href="#">IG</a>
-          </div>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>&copy; <?= date('Y') ?> Timosa Tech. All rights reserved.</p>
-      </div>
-    </div>
-  </footer>
+  <!-- INFO: FOOTER SECTION -->
+  <?php 
+    require_once __DIR__ . '/../components/footer.php'; 
+  ?>
 
 </body>
 </html>

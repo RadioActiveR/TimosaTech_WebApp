@@ -7,8 +7,15 @@
  * key checkout.php sets), so anything left unchecked stays in the cart.
  */
 
+/* INFO: Linked Files:
+
+    config/db.php
+    user-profile-functions.php
+
+*/
+
 session_start();
-require __DIR__ . '/db.php';
+require __DIR__ . '/../config/db.php';
 require __DIR__ . '/cart-functions.php';
 require __DIR__ . '/order-functions.php';
 

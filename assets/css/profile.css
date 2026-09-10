@@ -1,0 +1,18 @@
+.profile-circle-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+}
+.profile-circle-btn svg {
+    width: 20px;
+    height: 20px;
+}
+.profile-circle-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}

@@ -1,0 +1,47 @@
+/* Product card footer layout: price+stock on one row, actions on the next.
+   Prevents the price, stock, and action buttons from squeezing into a
+   single cramped row when the price string gets long. */
+
+.product-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.product-info-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.product-info-row .product-price {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.product-stock {
+  font-size: 0.85rem;
+  color: var(--text-muted, #9aa0a6);
+  white-space: nowrap;
+}
+
+.product-stock.out-of-stock {
+  color: var(--danger, #e05555);
+}
+
+.product-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Pushes cart left, details right */
+  width: 100%;
+}
+
+.product-actions .quick-add-btn {
+  flex: 0 0 auto; /* Keeps cart icon square */
+}
+
+.product-actions .view-details-btn {
+  flex: 0 0 auto; /* Keeps button sized strictly to its content */
+  padding: 8px 16px; /* Adjust padding as needed for button width */
+}

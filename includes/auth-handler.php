@@ -3,8 +3,14 @@
  * (distinguished by the hidden "action" field).
  */
 
+/* INFO: Linked Files:
+
+    config/db.php
+
+*/
+
 session_start();
-require __DIR__ . '/db.php';
+require __DIR__ . '/../config/db.php';
 
 function redirect_back(string $tab, ?string $error = null): void {
     if ($error !== null) {
@@ -109,7 +115,7 @@ if ($action === 'login') {
 
     // Redirect based on role
     if ($user['role'] === 'admin') {
-        header("Location: ../pages/admin-dashboard.php");
+        header("Location: ../admin/admin-portal.php");
     } else {
         header("Location: ../pages/homepage.php");
     }

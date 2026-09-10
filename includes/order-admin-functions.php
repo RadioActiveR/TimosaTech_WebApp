@@ -1,5 +1,5 @@
 <?php
-/* INFO: Order management helpers for the Admin Dashboard "Orders" tab.
+/* INFO: Order management helpers for the Admin Portal "Orders" tab.
  * Kept separate from order-functions.php (which only handles turning a
  * cart into a new order at checkout) so admin CRUD logic lives on its own.
  */

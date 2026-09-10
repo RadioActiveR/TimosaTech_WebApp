@@ -1,4 +1,5 @@
 <?php
+
 /* INFO: Single shared MySQL connection (PDO).
  * Adjust these four values if your XAMPP MySQL setup differs
  * from the defaults (root user, no password, localhost).
