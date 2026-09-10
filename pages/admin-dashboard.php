@@ -302,7 +302,13 @@ if ($active_tab === 'crud_log') {
         <span class="admin-badge">ADMINISTRATOR DASHBOARD</span>
       </div>
       <div class="nav-cta">
-        <span class="nav-greeting">Hi, <?= htmlspecialchars($user_name) ?></span>
+
+        <span class="nav-greeting">Hi, <?= htmlspecialchars(
+            mb_strlen($user_name) > 13 
+                ? explode(' ', trim($user_name))[0] 
+                : $user_name
+        ) ?></span>
+
         <a href="homepage.php" class="btn btn-outline admin-nav-btn">View Main Site</a>
         <a href="../includes/logout.php" class="btn btn-outline">Log Out</a>
       </div>

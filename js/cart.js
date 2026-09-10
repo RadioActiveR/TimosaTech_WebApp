@@ -1,5 +1,5 @@
 /* Timosa Tech — Cart modal (open/close, add/update/remove via AJAX,
-   select-before-checkout) */
+   select-before-checkout) + quick add-to-cart buttons on product cards */
 
 document.addEventListener("DOMContentLoaded", function () {
   const cartOverlay     = document.getElementById("cartOverlay");
@@ -38,6 +38,24 @@ document.addEventListener("DOMContentLoaded", function () {
     const div = document.createElement("div");
     div.textContent = str ?? "";
     return div.innerHTML;
+  }
+
+  // Small floating confirmation/error message, used by the quick add-to-cart
+  // buttons on the product cards so we don't have to pop the cart modal open
+  // just to add one item.
+  function showToast(message, isError = false) {
+    let toast = document.getElementById("cartToast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "cartToast";
+      toast.className = "cart-toast";
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.toggle("error", isError);
+    toast.classList.add("show");
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(() => toast.classList.remove("show"), 2200);
   }
 
   // Recomputes the "selected total" and the Order Now button's disabled
@@ -230,4 +248,29 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
+
+  // Quick add-to-cart buttons on the product cards (homepage + shop grid).
+  // Delegated on the document since these buttons are rendered server-side
+  // per page and never re-rendered like the cart item list is.
+  document.addEventListener("click", async (e) => {
+    const quickAddBtn = e.target.closest(".quick-add-btn");
+    if (!quickAddBtn) return;
+    e.preventDefault();
+
+    if (quickAddBtn.disabled) return;
+    const productId = quickAddBtn.dataset.id;
+    if (!productId) return;
+
+    quickAddBtn.disabled = true;
+    const data = await cartRequest("add", { product_id: productId, quantity: 1 });
+    quickAddBtn.disabled = false;
+
+    if (data === null) return; // not logged in (auth modal already opened) or network error
+
+    if (data.success) {
+      showToast("Added to cart");
+    } else {
+      showToast(data.error || "Couldn't add that item to your cart.", true);
+    }
+  });
 });

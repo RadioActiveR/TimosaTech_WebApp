@@ -1,201 +1,327 @@
 <?php
+/* INFO: Checkout page displaying selected cart items, auto-filling 
+ * shipping information from user_profiles, and submitting to order-handler.php.
+ */
+
 session_start();
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/cart-functions.php';
+require_once __DIR__ . '/../includes/user-profile-functions.php';
 
+// Redirect unauthenticated users
 if (!isset($_SESSION['u_id'])) {
     header("Location: homepage.php");
-    exit();
+    exit;
 }
 
-$u_id       = $_SESSION['u_id'];
-$user_name  = $_SESSION['username'] ?? '';
-$is_admin   = ($_SESSION['user_role'] ?? '') === 'admin';
+$u_id = $_SESSION['u_id'];
 
-/* INFO (cart select-before-checkout): the cart modal POSTs here with
- * selected_items[] = the cart_item_ids the user checked off. We re-validate
- * those against the user's actual cart (never trust IDs from the client),
- * stash the valid ones in session, then redirect back to ourselves via GET
- * (Post/Redirect/Get) so refreshing this page doesn't re-submit the form.
- * order-handler.php reads this same session key so a validation error on
- * the checkout form redirects back here without losing the selection.
- */
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_items'])) {
-    $requested_ids = (array) $_POST['selected_items'];
-    $valid_items   = get_cart_items_by_ids($pdo, $u_id, $requested_ids);
+// Retrieve selected item IDs (passed via POST from cart modal/page or stored in SESSION)
+$selected_cart_ids = $_POST['selected_items'] ?? $_SESSION['checkout_selected_items'] ?? [];
 
-    if (!empty($valid_items)) {
-        $_SESSION['checkout_selected_items'] = array_column($valid_items, 'cart_item_id');
-    } else {
-        unset($_SESSION['checkout_selected_items']);
-    }
-
-    header("Location: checkout.php");
-    exit();
+if (empty($selected_cart_ids)) {
+    // If no items selected, redirect back to cart or product view
+    header("Location: products.php");
+    exit;
 }
 
-$page_title = "Timosa Tech - Checkout";
+// Store selections in session for resilience across page refreshes
+$_SESSION['checkout_selected_items'] = $selected_cart_ids;
 
-// Falls back to the whole cart if there's no valid selection in session
-// (e.g. the user bookmarked/navigated to this page directly).
-$cart_items = get_checkout_cart_items($pdo, $u_id);
-if (empty($cart_items)) {
-    header("Location: shop.php");
-    exit();
+// Fetch selected cart items
+$checkout_items = get_cart_items($pdo, $u_id, $selected_cart_ids);
+
+if (empty($checkout_items)) {
+    header("Location: products.php");
+    exit;
 }
 
-$cart_total   = 0;
-foreach ($cart_items as $item) {
-    $cart_total += $item['price'] * $item['quantity'];
+// Calculate subtotal
+$subtotal = 0;
+foreach ($checkout_items as $item) {
+    $subtotal += $item['price'] * $item['quantity'];
 }
-$shipping_fee = 0.00;
-$grand_total  = $cart_total + $shipping_fee;
 
-// Prefill from saved profile, if the user has one on file
-$stmt = $pdo->prepare("SELECT full_name, phone_number, address_line1, address_line2, city, province, postal_code FROM user_profiles WHERE u_id = ?");
-$stmt->execute([$u_id]);
-$profile = $stmt->fetch() ?: [];
+$shipping_fee = 100.00; // Flat-rate shipping fee
+$grand_total  = $subtotal + $shipping_fee;
 
+// Fetch user profile data to auto-fill shipping fields
+$user_profile = get_user_profile($pdo, $u_id);
+
+$default_recipient = trim(($user_profile['first_name'] ?? '') . ' ' . ($user_profile['last_name'] ?? ''));
+$default_phone     = $user_profile['phone_number'] ?? '';
+$default_addr1     = $user_profile['address_line1'] ?? '';
+$default_addr2     = $user_profile['address_line2'] ?? '';
+$default_city      = $user_profile['city'] ?? '';
+$default_province  = $user_profile['province'] ?? '';
+$default_postal    = $user_profile['postal_code'] ?? '';
+
+// Check for validation errors returned from order-handler.php
 $checkout_error = $_SESSION['checkout_error'] ?? null;
-$old_input       = $_SESSION['checkout_old_input'] ?? [];
-unset($_SESSION['checkout_error'], $_SESSION['checkout_old_input']);
-
-$payment_methods = [
-    'cod'           => 'Cash on Delivery',
-    'gcash'         => 'GCash',
-    'bank_transfer' => 'Bank Transfer',
-];
-$selected_payment = $old_input['payment_method'] ?? 'cod';
+unset($_SESSION['checkout_error']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= htmlspecialchars($page_title) ?></title>
-  <link rel="stylesheet" href="../styles/styles.css">
+  <title>Checkout | Timosa Tech</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <style>
+    .checkout-container {
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 2rem;
+    }
+    .checkout-section {
+      background: #181818;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .checkout-section h2 {
+      margin-top: 0;
+      border-bottom: 1px solid #333;
+      padding-bottom: 0.75rem;
+      font-size: 1.25rem;
+      color: #fff;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .full-width {
+      grid-column: span 2;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.4rem;
+      color: #ccc;
+      font-size: 0.9rem;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 0.65rem;
+      background: #222;
+      border: 1px solid #444;
+      color: #fff;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: #007bff;
+    }
+    .payment-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .payment-option {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: #222;
+      padding: 0.75rem 1rem;
+      border: 1px solid #444;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .payment-option input {
+      width: auto;
+    }
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 0.95rem;
+    }
+    .summary-item-title {
+      font-weight: bold;
+      color: #fff;
+    }
+    .summary-item-sub {
+      color: #888;
+      font-size: 0.85rem;
+    }
+    .summary-divider {
+      border-top: 1px solid #333;
+      margin: 1rem 0;
+    }
+    .summary-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #007bff;
+    }
+    .btn-submit-order {
+      width: 100%;
+      padding: 0.85rem;
+      background: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 1.5rem;
+      transition: background 0.2s;
+    }
+    .btn-submit-order:hover {
+      background: #218838;
+    }
+    .alert-error {
+      background: #721c24;
+      color: #f8d7da;
+      padding: 0.85rem;
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 768px) {
+      .checkout-container {
+        grid-template-columns: 1fr;
+      }
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .full-width {
+        grid-column: span 1;
+      }
+    }
+  </style>
 </head>
 <body>
 
-  <header class="navbar">
-    <div class="container">
-      <div class="logo">
-        <img class="img-logo" src="../images/TimosaTechLogo.png" alt="Logo">
-        <a class="logoname1" href="../index.php">TIMOSA</a><a class="logoname2" href="../index.php">TECH</a>
-      </div>
-      <nav class="nav-links">
-        <a href="../index.php">Home</a>
-        <a href="shop.php">Shop</a>
-        <a href="#">Services</a>
-        <a href="#">About</a>
-        <a href="#">Contact</a>
-      </nav>
-      <div class="nav-cta">
-        <span class="nav-greeting">Hi, <?= htmlspecialchars(explode(' ', $user_name)[0]) ?></span>
-        <?php if ($is_admin): ?>
-          <a href="admin-dashboard.php" class="btn btn-outline admin-nav-btn">Admin Dashboard</a>
-        <?php endif; ?>
-        <a href="../includes/logout.php" class="btn btn-outline">Log Out</a>
-      </div>
-    </div>
-  </header>
-
-  <main class="container checkout-main">
-    <div class="checkout-header">
-      <span class="section-tag">SECURE CHECKOUT</span>
-      <h1>Complete Your Order</h1>
-    </div>
-
+  <div style="max-width: 1100px; margin: 1.5rem auto 0; padding: 0 1rem;">
+    <h1>Checkout</h1>
     <?php if ($checkout_error): ?>
-      <p class="auth-error" style="max-width: 700px; margin-bottom: 20px;"><?= htmlspecialchars($checkout_error) ?></p>
+      <div class="alert-error"><?= htmlspecialchars($checkout_error) ?></div>
     <?php endif; ?>
+  </div>
 
-    <div class="checkout-layout">
-      <!-- Recipient / Payment Form -->
-      <form method="post" action="../includes/order-handler.php" class="checkout-form">
-        <section class="checkout-panel">
-          <h3>Recipient Details</h3>
-          <div class="auth-field">
-            <label for="recipientName">Full Name *</label>
-            <input type="text" id="recipientName" name="recipient_name"
-                   value="<?= htmlspecialchars($old_input['recipient_name'] ?? $profile['full_name'] ?? '') ?>" required>
-          </div>
-          <div class="auth-field">
-            <label for="phoneNumber">Phone Number *</label>
-            <input type="text" id="phoneNumber" name="phone_number"
-                   value="<?= htmlspecialchars($old_input['phone_number'] ?? $profile['phone_number'] ?? '') ?>" required>
-          </div>
-          <div class="auth-field">
-            <label for="addressLine1">Address Line 1 *</label>
-            <input type="text" id="addressLine1" name="address_line1"
-                   value="<?= htmlspecialchars($old_input['address_line1'] ?? $profile['address_line1'] ?? '') ?>" required>
-          </div>
-          <div class="auth-field">
-            <label for="addressLine2">Address Line 2</label>
-            <input type="text" id="addressLine2" name="address_line2"
-                   value="<?= htmlspecialchars($old_input['address_line2'] ?? $profile['address_line2'] ?? '') ?>">
-          </div>
-          <div style="display:flex; gap:15px; flex-wrap: wrap;">
-            <div class="auth-field" style="flex:1; min-width: 140px;">
-              <label for="city">City *</label>
-              <input type="text" id="city" name="city"
-                     value="<?= htmlspecialchars($old_input['city'] ?? $profile['city'] ?? '') ?>" required>
+  <form action="../includes/order-handler.php" method="POST">
+    <div class="checkout-container">
+      
+      <!-- Left Column: Shipping & Payment Information -->
+      <div class="checkout-main">
+        <div class="checkout-section">
+          <h2>Shipping Address</h2>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label>Recipient Full Name *</label>
+              <input type="text" name="recipient_name" value="<?= htmlspecialchars($default_recipient) ?>" required placeholder="e.g. Cornelius Timosa">
             </div>
-            <div class="auth-field" style="flex:1; min-width: 140px;">
-              <label for="province">Province *</label>
-              <input type="text" id="province" name="province"
-                     value="<?= htmlspecialchars($old_input['province'] ?? $profile['province'] ?? '') ?>" required>
+            <div class="form-group full-width">
+              <label>Phone Number *</label>
+              <input type="text" name="phone_number" value="<?= htmlspecialchars($default_phone) ?>" required placeholder="e.g. 09123456789">
             </div>
-            <div class="auth-field" style="flex:1; min-width: 140px;">
-              <label for="postalCode">Postal Code *</label>
-              <input type="text" id="postalCode" name="postal_code"
-                     value="<?= htmlspecialchars($old_input['postal_code'] ?? $profile['postal_code'] ?? '') ?>" required>
+            <div class="form-group full-width">
+              <label>Address Line 1 *</label>
+              <input type="text" name="address_line1" value="<?= htmlspecialchars($default_addr1) ?>" required placeholder="House/Unit No., Street Name, Barangay">
+            </div>
+            <div class="form-group full-width">
+              <label>Address Line 2 (Optional)</label>
+              <input type="text" name="address_line2" value="<?= htmlspecialchars($default_addr2) ?>" placeholder="Apt, Suite, Building, Landmark">
+            </div>
+            <div class="form-group">
+              <label>City *</label>
+              <input type="text" name="city" value="<?= htmlspecialchars($default_city) ?>" required placeholder="e.g. Dipolog City">
+            </div>
+            <div class="form-group">
+              <label>Province *</label>
+              <input type="text" name="province" value="<?= htmlspecialchars($default_province) ?>" required placeholder="e.g. Zamboanga del Norte">
+            </div>
+            <div class="form-group full-width">
+              <label>Postal Code *</label>
+              <input type="text" name="postal_code" value="<?= htmlspecialchars($default_postal) ?>" required placeholder="e.g. 7100">
             </div>
           </div>
-        </section>
+        </div>
 
-        <section class="checkout-panel">
-          <h3>Payment Method</h3>
+        <div class="checkout-section">
+          <h2>Payment Method</h2>
           <div class="payment-options">
-            <?php foreach ($payment_methods as $val => $label): ?>
-              <label class="payment-option">
-                <input type="radio" name="payment_method" value="<?= $val ?>" <?= $selected_payment === $val ? 'checked' : '' ?> required>
-                <span><?= htmlspecialchars($label) ?></span>
-              </label>
+            <label class="payment-option">
+              <input type="radio" name="payment_method" value="cod" checked>
+              <div>
+                <strong>Cash on Delivery (COD)</strong>
+                <div style="font-size: 0.85rem; color: #888;">Pay upon receiving your order at your doorstep.</div>
+              </div>
+            </label>
+            <label class="payment-option">
+              <input type="radio" name="payment_method" value="gcash">
+              <div>
+                <strong>GCash</strong>
+                <div style="font-size: 0.85rem; color: #888;">Direct e-wallet transfer. Details provided upon placement.</div>
+              </div>
+            </label>
+            <label class="payment-option">
+              <input type="radio" name="payment_method" value="bank_transfer">
+              <div>
+                <strong>Bank Transfer</strong>
+                <div style="font-size: 0.85rem; color: #888;">Online banking or deposit transfer.</div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Order Summary -->
+      <div class="checkout-sidebar">
+        <div class="checkout-section">
+          <h2>Order Summary</h2>
+          
+          <div style="max-height: 250px; overflow-y: auto; padding-right: 0.5rem; margin-bottom: 1rem;">
+            <?php foreach ($checkout_items as $item): ?>
+              <div class="summary-item">
+                <div>
+                  <div class="summary-item-title"><?= htmlspecialchars($item['name']) ?></div>
+                  <div class="summary-item-sub">Qty: <?= (int)$item['quantity'] ?> × ₱<?= number_format($item['price'], 2) ?></div>
+                </div>
+                <div>₱<?= number_format($item['price'] * $item['quantity'], 2) ?></div>
+              </div>
             <?php endforeach; ?>
           </div>
-        </section>
 
-        <button type="submit" class="btn btn-primary auth-submit checkout-submit-btn">Place Order</button>
-      </form>
+          <div class="summary-divider"></div>
 
-      <!-- Order Summary -->
-      <aside class="checkout-summary">
-        <h3>Order Summary</h3>
-        <div class="checkout-summary-items">
-          <?php foreach ($cart_items as $item):
-            $img_src = !empty($item['image_data'])
-              ? 'data:' . htmlspecialchars($item['mime_type'] ?? 'image/png') . ';base64,' . $item['image_data']
-              : '../images/workstation-rig.png';
-          ?>
-            <div class="summary-item">
-              <img src="<?= $img_src ?>" alt="<?= htmlspecialchars($item['name']) ?>">
-              <div class="summary-item-info">
-                <h4><?= htmlspecialchars($item['name']) ?></h4>
-                <span>Qty: <?= intval($item['quantity']) ?> &times; $<?= number_format($item['price'], 2) ?></span>
-              </div>
-              <div class="summary-item-subtotal">$<?= number_format($item['price'] * $item['quantity'], 2) ?></div>
-            </div>
+          <div class="summary-item">
+            <span>Subtotal</span>
+            <span>₱<?= number_format($subtotal, 2) ?></span>
+          </div>
+          <div class="summary-item">
+            <span>Shipping Fee</span>
+            <span>₱<?= number_format($shipping_fee, 2) ?></span>
+          </div>
+
+          <div class="summary-divider"></div>
+
+          <div class="summary-total">
+            <span>Total</span>
+            <span>₱<?= number_format($grand_total, 2) ?></span>
+          </div>
+
+          <!-- Hidden inputs for backend execution -->
+          <?php foreach ($checkout_items as $item): ?>
+            <input type="hidden" name="selected_items[]" value="<?= htmlspecialchars($item['cart_id']) ?>">
           <?php endforeach; ?>
+
+          <button type="submit" class="btn-submit-order">Place Order</button>
         </div>
-        <div class="checkout-summary-totals">
-          <div class="summary-row"><span>Subtotal</span><span>$<?= number_format($cart_total, 2) ?></span></div>
-          <div class="summary-row"><span>Shipping</span><span><?= $shipping_fee > 0 ? '$' . number_format($shipping_fee, 2) : 'Free' ?></span></div>
-          <div class="summary-row summary-total"><span>Total</span><span>$<?= number_format($grand_total, 2) ?></span></div>
-        </div>
-      </aside>
+      </div>
+
     </div>
-  </main>
+  </form>
 
 </body>
 </html>

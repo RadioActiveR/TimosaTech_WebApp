@@ -141,6 +141,26 @@ $products = $stmt->fetchAll();
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= htmlspecialchars($page_title) ?></title>
   <link rel="stylesheet" href="../styles/styles.css">
+  <style>
+    .profile-circle-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .profile-circle-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+    .profile-circle-btn:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      transform: scale(1.05);
+    }
+  </style>
 </head>
 
 <body>
@@ -149,9 +169,10 @@ $products = $stmt->fetchAll();
   <header class="navbar">
     <div class="container">
       <div class="logo">
-        <img class="img-logo" src="../images/TimosaTechLogo.png">
+        <img class="img-logo" src="../images/TimosaTechLogo.png" alt="Timosa Tech Logo">
         <a class="logoname1">TIMOSA</a><a class="logoname2">TECH</a>
       </div>
+
       <nav class="nav-links">
         <?php foreach ($nav_links as $link): ?>
           <a href="<?= htmlspecialchars($link['href']) ?>" class="<?= !empty($link['active']) ? 'active' : '' ?>">
@@ -159,22 +180,38 @@ $products = $stmt->fetchAll();
           </a>
         <?php endforeach; ?>
       </nav>
+
       <div class="nav-cta">
         <?php if ($is_logged_in): ?>
           
-          <span class="nav-greeting">Hi, <?= htmlspecialchars(explode(' ', $user_name)[0]) ?></span>
-    
+          <span class="nav-greeting">Hi, <?= htmlspecialchars(
+              mb_strlen($user_name) > 13 
+                  ? explode(' ', trim($user_name))[0] 
+                  : $user_name
+          ) ?></span>
+
           <?php if ($is_admin): ?>
-            <a href="admin-dashboard.php" class="btn btn-outline admin-nav-btn">Admin Dashboard</a>
+            <a href="admin-dashboard.php" class="btn btn-outline admin-nav-btn">Admin Dash</a>
           <?php endif; ?>
-    
-          <a href="../includes/logout.php" class="btn btn-outline">Log Out</a>
-        <?php else: ?>
-          <a href="#" class="btn btn-outline" data-open-auth="login">Login</a>
-        <?php endif; ?>
-        <button type="button" class="btn btn-outline cart-nav-btn" data-open-cart>
-            Cart <span class="cart-count-badge" style="<?= $cart_count === 0 ? 'display:none;' : '' ?>"><?= $cart_count ?></span>
+          
+          <button type="button" class="btn btn-outline cart-nav-btn" data-open-cart>
+            Cart <span class="cart-count-badge" style="<?= $cart_count === 0 ? 'display:none;' : '' ?>"><?= (int)$cart_count ?></span>
           </button>
+
+          <!-- Circular Profile Button -->
+          <a href="profile.php" class="btn btn-outline profile-circle-btn" title="My Profile" aria-label="My Profile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </a>
+
+        <?php else: ?>
+          <a href="#" class="btn btn-outline" data-open-auth="login">Log In</a>
+        <?php endif; ?>
+
+
+
       </div>
     </div>
   </header>
@@ -250,16 +287,32 @@ $products = $stmt->fetchAll();
                 <p><?= htmlspecialchars($product['description'] ?? '') ?></p>
                 <div class="product-footer">
                   <span class="product-price">$<?= number_format($product['price'], 2) ?></span>
-                  <button class="btn btn-outline view-details-btn" 
-                          data-id="<?= $product['product_id'] ?>"
-                          data-name="<?= htmlspecialchars($product['name']) ?>"
-                          data-price="$<?= number_format($product['price'], 2) ?>"
-                          data-stock="<?= intval($product['stock']) ?>"
-                          data-category="<?= htmlspecialchars($categories[$product['category']] ?? $product['category']) ?>"
-                          data-desc="<?= htmlspecialchars($product['description'] ?? 'No detailed description available.') ?>"
-                          data-img="<?= $img_src ?>">
-                    View Details
-                  </button>
+                  <div class="product-actions">
+                    <button type="button"
+                            class="quick-add-btn"
+                            data-id="<?= $product['product_id'] ?>"
+                            aria-label="Quick add <?= htmlspecialchars($product['name']) ?> to cart"
+                            title="Add to cart">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <g transform="translate(-1,2) scale(0.72)">
+                          <circle cx="9" cy="21" r="1"></circle>
+                          <circle cx="20" cy="21" r="1"></circle>
+                          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        </g>
+                        <path d="M18 2v6M15 5h6"></path>
+                      </svg>
+                    </button>
+                    <button class="btn btn-outline view-details-btn" 
+                            data-id="<?= $product['product_id'] ?>"
+                            data-name="<?= htmlspecialchars($product['name']) ?>"
+                            data-price="$<?= number_format($product['price'], 2) ?>"
+                            data-stock="<?= intval($product['stock']) ?>"
+                            data-category="<?= htmlspecialchars($categories[$product['category']] ?? $product['category']) ?>"
+                            data-desc="<?= htmlspecialchars($product['description'] ?? 'No detailed description available.') ?>"
+                            data-img="<?= $img_src ?>">
+                      View Details
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
