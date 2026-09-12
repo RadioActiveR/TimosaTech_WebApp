@@ -11,8 +11,8 @@
 */
 
 session_start();
-require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../includes/functions/user-profile-functions.php';
+require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../functions/user-profile-functions.php';
 
 if (!isset($_SESSION['u_id'])) {
     header("Location: ../pages/homepage.php");

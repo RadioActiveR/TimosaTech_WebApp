@@ -1,0 +1,27 @@
+/* ==========================================================================
+   ORDER CONFIRMATION PAGE — page-specific styles only.
+
+   The layout itself reuses the same shared "checkout" design system as
+   pages/checkout.php (.checkout-main, .checkout-layout, .checkout-panel,
+   .checkout-summary, .checkout-summary-items, .summary-item*,
+   .checkout-summary-totals, .summary-row) plus site-wide components
+   (.section-tag, .btn/.btn-outline, .center-btn, .order-confirm-banner) —
+   all already defined in styles.css. Only the handful of things unique to
+   this specific page live here.
+   ========================================================================== */
+
+/* Shipping address / payment method text under each "Shipping To" heading. */
+.order-confirmation-address {
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+/* Spacing above the "Payment Method" sub-heading within the same panel. */
+.order-confirmation-section-heading {
+  margin-top: 20px;
+}
+
+/* Spacing above the "Continue Shopping" button at the bottom of the page. */
+.order-confirmation-continue-wrap {
+  margin-top: 30px;
+}

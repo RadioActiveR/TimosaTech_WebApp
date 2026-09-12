@@ -15,9 +15,9 @@
 */
 
 session_start();
-require __DIR__ . '/../config/db.php';
-require __DIR__ . '/../includes/functions/cart-functions.php';
-require __DIR__ . '/../includes/functions/order-functions.php';
+require __DIR__ . '/../../config/db.php';
+require __DIR__ . '/../functions/cart-functions.php';
+require __DIR__ . '/../functions/order-functions.php';
 
 if (!isset($_SESSION['u_id'])) {
     header("Location: ../pages/homepage.php");
@@ -100,5 +100,5 @@ if (!$order_id) {
 // visit to the cart modal should default back to "everything selected".
 unset($_SESSION['checkout_selected_items']);
 
-header("Location: ../pages/order-confirmation.php?order_id=" . urlencode($order_id));
+header("Location: ../../pages/order-confirmation.php?order_id=" . urlencode($order_id));
 exit;   

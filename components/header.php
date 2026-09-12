@@ -1,7 +1,11 @@
 <?php
 // Determine component view modes based on $current_page
-$is_admin_page   = (isset($current_page) && $current_page === 'admin');
-$is_profile_page = (isset($current_page) && $current_page === 'profile');
+$is_admin_page    = (isset($current_page) && $current_page === 'admin');
+$is_profile_page  = (isset($current_page) && $current_page === 'profile');
+
+// Pages can opt in to a logo-only header (no nav links, no cart/profile/admin actions)
+// by setting `$minimal_header = true;` before including this file.
+$is_minimal_header = !empty($minimal_header);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -37,6 +41,7 @@ $is_profile_page = (isset($current_page) && $current_page === 'profile');
         </div>
 
         <!-- NAVIGATION LINKS -->
+        <?php if (!$is_minimal_header): ?>
         <nav class="nav-links">
           <?php if ($is_profile_page): ?>
             <!-- Only show Home link when on the Profile page -->
@@ -61,9 +66,11 @@ $is_profile_page = (isset($current_page) && $current_page === 'profile');
             <?php endforeach; ?>
           <?php endif; ?>
         </nav>
+        <?php endif; ?>
       <?php endif; ?>
 
       <!-- USER ACTIONS & CTA SECTION -->
+      <?php if (!$is_minimal_header): ?>
       <div class="nav-cta">
         <?php if (!empty($is_logged_in) || $is_admin_page || $is_profile_page): ?>
           
@@ -105,6 +112,7 @@ $is_profile_page = (isset($current_page) && $current_page === 'profile');
           <a href="#" class="btn btn-outline" data-open-auth="login">Log In</a>
         <?php endif; ?>
       </div>
+      <?php endif; ?>
 
     </div>
   </header>

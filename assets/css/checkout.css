@@ -1,0 +1,33 @@
+/* ==========================================================================
+   CHECKOUT PAGE — page-specific styles only.
+
+   Almost everything else the checkout page needs already exists as shared
+   classes in styles.css — the same ones pages/order-confirmation.php uses
+   (.checkout-main, .checkout-header, .checkout-layout, .checkout-panel,
+   .payment-options/.payment-option, .checkout-summary,
+   .checkout-summary-items, .summary-item*, .checkout-summary-totals,
+   .summary-row), plus site-wide components (.auth-field for form inputs,
+   .form-grid-2 for the City/Province row, .section-tag, .auth-error,
+   .btn/.btn-primary). Reusing those instead of duplicating them here is
+   what keeps this page's look consistent with the rest of the site.
+   ========================================================================== */
+
+.checkout-error-banner {
+  margin-bottom: 24px;
+}
+
+/* Small muted description line under each payment method's label. */
+.payment-option-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* .checkout-submit-btn (in styles.css) is an inline-width action button
+   used elsewhere; this page's "Place Order" is the single primary CTA
+   living inside the sticky summary sidebar, so it reads better spanning
+   the full width of that card instead. */
+.checkout-summary-submit {
+  width: 100%;
+  margin-top: 18px;
+}

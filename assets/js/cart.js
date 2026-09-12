@@ -46,6 +46,16 @@ document.addEventListener("DOMContentLoaded", function () {
     return div.innerHTML;
   }
 
+  // Matches PHP's number_format($n, 2): thousands separator + 2 decimals,
+  // with the peso sign, so client-rendered prices look identical to the
+  // server-rendered ones on first page load.
+  function formatPrice(amount) {
+    return "₱" + Number(amount).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
   // Small floating confirmation/error message, used by the quick add-to-cart
   // buttons on the product cards so we don't have to pop the cart modal open
   // just to add one item.
@@ -80,7 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     if (cartTotalValue) {
-      cartTotalValue.textContent = "$" + selectedTotal.toFixed(2);
+      cartTotalValue.textContent = formatPrice(selectedTotal);
     }
 
     if (cartOrderBtn) {
@@ -126,7 +136,7 @@ document.addEventListener("DOMContentLoaded", function () {
               <img src="${item.image_src}" alt="${escapeHtml(item.name)}">
               <div class="cart-item-info">
                 <h4>${escapeHtml(item.name)}</h4>
-                <span class="cart-item-price">$${Number(item.price).toFixed(2)}</span>
+                <span class="cart-item-price">${formatPrice(item.price)}</span>
                 <div class="cart-qty-controls">
                   <button type="button" class="cart-qty-btn" data-delta="-1" aria-label="Decrease quantity">&minus;</button>
                   <span class="cart-qty-value">${item.quantity}</span>
@@ -134,7 +144,7 @@ document.addEventListener("DOMContentLoaded", function () {
                   <button type="button" class="cart-remove-btn">Remove</button>
                 </div>
               </div>
-              <div class="cart-item-subtotal">$${Number(item.subtotal).toFixed(2)}</div>
+              <div class="cart-item-subtotal">${formatPrice(item.subtotal)}</div>
             </div>
           `;
         }).join("");
@@ -148,7 +158,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const body = new URLSearchParams({ action, ...params });
     let res;
     try {
-      res = await fetch("../includes/cart-handler.php", {
+      res = await fetch("../includes/handlers/cart-handler.php", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body
@@ -166,9 +176,26 @@ document.addEventListener("DOMContentLoaded", function () {
       return null;
     }
 
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch (err) {
+      // Server didn't return valid JSON (e.g. a PHP error page) — fail
+      // gracefully instead of throwing, so callers can still re-enable
+      // whatever button they disabled before this request.
+      showToast("Something went wrong. Please try again.", true);
+      return null;
+    }
     renderCart(data);
     return data;
+  }
+
+  if (window.isLoggedIn === true) {
+    // Populate lastCartData immediately so checkbox selection works from
+    // the very first click, instead of only after the first add/update/
+    // remove triggers a render. Also brings prices in line with the
+    // server-rendered formatting (see formatPrice) right away.
+    cartRequest("list");
   }
 
   openCartBtns.forEach(btn => {
@@ -268,10 +295,14 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!productId) return;
 
     quickAddBtn.disabled = true;
-    const data = await cartRequest("add", { product_id: productId, quantity: 1 });
-    quickAddBtn.disabled = false;
+    let data;
+    try {
+      data = await cartRequest("add", { product_id: productId, quantity: 1 });
+    } finally {
+      quickAddBtn.disabled = false;
+    }
 
-    if (data === null) return; // not logged in (auth modal already opened) or network error
+    if (data === null) return; // not logged in (auth modal already opened) or request failed
 
     if (data.success) {
       showToast("Added to cart");

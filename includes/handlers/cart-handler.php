@@ -14,8 +14,8 @@
 
 session_start();
 header('Content-Type: application/json');
-require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../includes/functions/cart-functions.php';
+require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../functions/cart-functions.php';
 
 if (!isset($_SESSION['u_id'])) {
     http_response_code(401);

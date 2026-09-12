@@ -27,6 +27,7 @@
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/page-veil.css">
   <link rel="stylesheet" href="../assets/css/styles.css">
+  <link rel="stylesheet" href="../assets/css/cart-modal.css">
   <link rel="stylesheet" href="../assets/css/profile.css">
   <link rel="stylesheet" href="../assets/css/services.css">
 </head>
