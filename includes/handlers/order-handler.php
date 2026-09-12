@@ -16,8 +16,8 @@
 
 session_start();
 require __DIR__ . '/../config/db.php';
-require __DIR__ . '/cart-functions.php';
-require __DIR__ . '/order-functions.php';
+require __DIR__ . '/../includes/functions/cart-functions.php';
+require __DIR__ . '/../includes/functions/order-functions.php';
 
 if (!isset($_SESSION['u_id'])) {
     header("Location: ../pages/homepage.php");

@@ -1,4 +1,5 @@
 <?php
+$modal_hidden = isset($pdo) && function_exists('is_modal_hidden') && is_modal_hidden($pdo, 'modal_cart');
 /* INFO: Shopping cart modal. Include this right after auth-modal.php on any
  * page that shows the cart button (shop.php, homepage.php). Renders the
  * user's current cart server-side for first paint / no-JS fallback; js/cart.js
@@ -20,11 +21,11 @@
 
 */
 
-require_once __DIR__ . '/cart-functions.php';
+require_once __DIR__ . '/../functions/cart-functions.php';
 
 $cart_items = [];
 $cart_total = 0;
-if (isset($_SESSION['u_id'])) {
+if (!$modal_hidden && isset($_SESSION['u_id'])) {
     $cart_items = get_cart_items($pdo, $_SESSION['u_id']);
     foreach ($cart_items as $ci) {
         $cart_total += $ci['price'] * $ci['quantity'];
@@ -37,6 +38,10 @@ if (isset($_SESSION['u_id'])) {
       <h2>Your Cart</h2>
       <button type="button" class="modal-close" id="cartClose" aria-label="Close">&times;</button>
     </div>
+
+    <?php if ($modal_hidden): ?>
+    <h2 class="hidden">HIDDEN</h2>
+    <?php else: ?>
 
     <form method="post" action="checkout.php" id="cartCheckoutForm">
 
@@ -95,6 +100,8 @@ if (isset($_SESSION['u_id'])) {
         </button>
       </div>
     </form>
+
+    <?php endif; ?>
 
   </div>
 </div>

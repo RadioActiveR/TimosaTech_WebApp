@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 09, 2026 at 07:38 AM
+-- Generation Time: Sep 12, 2026 at 07:00 AM
 -- Server version: 8.0.43
 -- PHP Version: 8.2.12
 
@@ -140,12 +140,24 @@ CREATE TABLE `products` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `site_page_visibility`
+--
+
+CREATE TABLE `site_page_visibility` (
+  `page_key` varchar(50) NOT NULL,
+  `is_hidden` tinyint(1) NOT NULL DEFAULT '0',
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `users`
 --
 
 CREATE TABLE `users` (
   `u_id` varchar(50) NOT NULL,
-  `username` varchar(50) NOT NULL,
+  `username` varchar(30) NOT NULL,
   `email` varchar(150) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
   `role` varchar(20) NOT NULL DEFAULT 'user',
@@ -228,13 +240,20 @@ ALTER TABLE `products`
   ADD KEY `image_id` (`image_id`);
 
 --
+-- Indexes for table `site_page_visibility`
+--
+ALTER TABLE `site_page_visibility`
+  ADD PRIMARY KEY (`page_key`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`u_id`),
   ADD UNIQUE KEY `email` (`email`),
   ADD UNIQUE KEY `username` (`username`),
-  ADD UNIQUE KEY `u_id` (`u_id`);
+  ADD UNIQUE KEY `u_id` (`u_id`),
+  ADD UNIQUE KEY `username_2` (`username`);
 
 --
 -- Indexes for table `user_profiles`

@@ -13,8 +13,9 @@
 
 session_start();
 require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../includes/cart-functions.php';
-require_once __DIR__ . '/../includes/user-profile-functions.php';
+require_once __DIR__ . '/../includes/functions/cart-functions.php';
+require_once __DIR__ . '/../includes/functions/user-profile-functions.php';
+require_once __DIR__ . '/../includes/functions/site-control-functions.php';
 
 // Redirect unauthenticated users
 if (!isset($_SESSION['u_id'])) {
@@ -23,13 +24,14 @@ if (!isset($_SESSION['u_id'])) {
 }
 
 $u_id = $_SESSION['u_id'];
+$page_hidden = is_page_hidden($pdo, 'checkout');
 
 // Retrieve selected item IDs (passed via POST from cart modal/page or stored in SESSION)
 $selected_cart_ids = $_POST['selected_items'] ?? $_SESSION['checkout_selected_items'] ?? [];
 
 if (empty($selected_cart_ids)) {
     // If no items selected, redirect back to cart or product view
-    header("Location: products.php");
+    header("Location: shop.php");
     exit;
 }
 
@@ -37,10 +39,10 @@ if (empty($selected_cart_ids)) {
 $_SESSION['checkout_selected_items'] = $selected_cart_ids;
 
 // Fetch selected cart items
-$checkout_items = get_cart_items($pdo, $u_id, $selected_cart_ids);
+$checkout_items = get_cart_items_by_ids($pdo, $u_id, $selected_cart_ids);
 
 if (empty($checkout_items)) {
-    header("Location: products.php");
+    header("Location: shop.php");
     exit;
 }
 
@@ -74,8 +76,9 @@ unset($_SESSION['checkout_error']);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checkout | Timosa Tech</title>
-  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../assets/css/styles.css">
   <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/page-veil.css">
   <style>
     .checkout-container {
       max-width: 1100px;
@@ -211,6 +214,11 @@ unset($_SESSION['checkout_error']);
 </head>
 <body>
 
+  <?php if ($page_hidden): ?>
+  <main>
+    <h1 class="hidden"> HIDDEN </h1>
+  </main>
+  <?php else: ?>
   <div style="max-width: 1100px; margin: 1.5rem auto 0; padding: 0 1rem;">
     <h1>Checkout</h1>
     <?php if ($checkout_error): ?>
@@ -218,7 +226,7 @@ unset($_SESSION['checkout_error']);
     <?php endif; ?>
   </div>
 
-  <form action="../includes/order-handler.php" method="POST">
+  <form action="../includes/handlers/order-handler.php" method="POST">
     <div class="checkout-container">
       
       <!-- Left Column: Shipping & Payment Information -->
@@ -322,7 +330,7 @@ unset($_SESSION['checkout_error']);
 
           <!-- Hidden inputs for backend execution -->
           <?php foreach ($checkout_items as $item): ?>
-            <input type="hidden" name="selected_items[]" value="<?= htmlspecialchars($item['cart_id']) ?>">
+            <input type="hidden" name="selected_items[]" value="<?= htmlspecialchars($item['cart_item_id']) ?>">
           <?php endforeach; ?>
 
           <button type="submit" class="btn-submit-order">Place Order</button>
@@ -331,6 +339,7 @@ unset($_SESSION['checkout_error']);
 
     </div>
   </form>
+  <?php endif; ?>
 
 </body>
 </html>

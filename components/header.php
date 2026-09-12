@@ -24,7 +24,7 @@ $is_profile_page = (isset($current_page) && $current_page === 'profile');
         <!-- ADMIN BRANDING -->
         <div class="admin-brand">
           <a href="/TimosaTech/pages/homepage.php" class="logo">
-            <img class="img-logo" src="../images/TimosaTechLogo.png" alt="Logo" onerror="this.style.display='none'">
+            <img class="img-logo" src="/TimosaTech/assets/images/TimosaTechLogo.png" alt="Logo" onerror="this.style.display='none'">
             <span class="logoname1">TIMOSA</span><span class="logoname2">TECH</span>
           </a>
           <span class="admin-badge">ADMINISTRATOR PORTAL</span>
@@ -90,7 +90,7 @@ $is_profile_page = (isset($current_page) && $current_page === 'profile');
 
           <?php if ($is_profile_page): ?>
             <!-- Logout Action (Profile Page Exclusive) -->
-            <a href="/TimosaTech/includes/logout.php" class="btn btn-outline logout-btn">Logout</a>
+            <a href="/TimosaTech/includes/handlers/logout-handler.php" class="btn btn-outline logout-btn">Logout</a>
           <?php else: ?>
             <!-- Circular Profile Button (Hidden on Profile Page) -->
             <a href="/TimosaTech/pages/profile.php" class="btn btn-outline profile-circle-btn" title="My Profile" aria-label="My Profile">

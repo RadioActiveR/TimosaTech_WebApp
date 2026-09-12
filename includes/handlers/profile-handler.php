@@ -12,7 +12,7 @@
 
 session_start();
 require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/user-profile-functions.php';
+require_once __DIR__ . '/../includes/functions/user-profile-functions.php';
 
 if (!isset($_SESSION['u_id'])) {
     header("Location: ../pages/homepage.php");
@@ -36,8 +36,7 @@ $province      = trim($_POST['province'] ?? '');
 $postal_code   = trim($_POST['postal_code'] ?? '');
 
 $success = update_user_profile($pdo, $u_id, [
-    'first_name'    => $first_name,
-    'last_name'     => $last_name,
+    'full_name'     => trim($first_name . ' ' . $last_name),
     'phone_number'  => $phone_number,
     'address_line1' => $address_line1,
     'address_line2' => $address_line2,

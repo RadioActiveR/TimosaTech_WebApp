@@ -26,12 +26,21 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       modal.dataset.currentProductId = button.dataset.id;
-      document.getElementById('modalTitle').textContent = button.dataset.name;
-      document.getElementById('modalPrice').textContent = button.dataset.price;
-      document.getElementById('modalCategory').textContent = button.dataset.category;
-      document.getElementById('modalStock').textContent = button.dataset.stock;
-      document.getElementById('modalDesc').textContent = button.dataset.desc;
-      document.getElementById('modalImg').src = button.dataset.img;
+
+      const modalTitle    = document.getElementById('modalTitle');
+      const modalPrice    = document.getElementById('modalPrice');
+      const modalCategory = document.getElementById('modalCategory');
+      const modalStock    = document.getElementById('modalStock');
+      const modalDesc     = document.getElementById('modalDesc');
+      const modalImg      = document.getElementById('modalImg');
+
+      if (modalTitle)    modalTitle.textContent = button.dataset.name;
+      if (modalPrice)    modalPrice.textContent = button.dataset.price;
+      if (modalCategory) modalCategory.textContent = button.dataset.category;
+      if (modalStock)    modalStock.textContent = button.dataset.stock;
+      if (modalDesc)     modalDesc.textContent = button.dataset.desc;
+      if (modalImg)      modalImg.src = button.dataset.img;
+
       modal.classList.add('active');
     });
   });

@@ -9,13 +9,15 @@
 
 session_start();
 require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../includes/cart-functions.php';
+require_once __DIR__ . '/../includes/functions/cart-functions.php';
+require_once __DIR__ . '/../includes/functions/site-control-functions.php';
 require_once __DIR__ . '/../helpers/icons.php';
 
 $is_logged_in = isset($_SESSION['u_id']);
 $user_name    = $_SESSION['username'] ?? '';
 $is_admin     = ($_SESSION['user_role'] ?? '') === 'admin';
 $cart_count   = $is_logged_in ? get_cart_count($pdo, $_SESSION['u_id']) : 0;
+$page_hidden  = is_page_hidden($pdo, 'shop');
 
 $page_title = "Timosa Tech - Store";
 $current_page = 'shop';
@@ -63,9 +65,10 @@ $categories = [
   <title><?= htmlspecialchars($page_title) ?></title>
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/master.css">
-  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../assets/css/styles.css">
   <link rel="stylesheet" href="../assets/css/profile.css">
   <link rel="stylesheet" href="../assets/css/shop-cards.css">
+  <link rel="stylesheet" href="../assets/css/page-veil.css">
 </head>
 <body>
 
@@ -75,6 +78,9 @@ $categories = [
   ?>
 
   <main class="container shop-main">
+  <?php if ($page_hidden): ?>
+    <h1 class="hidden"> HIDDEN </h1>
+  <?php else: ?>
     <div class="shop-header">
       <div>
         <span class="section-tag">HARDWARE & SUPPLIES</span>
@@ -163,9 +169,10 @@ $categories = [
         <?php endif; ?>
       </section>
     </div>
+  <?php endif; ?>
   </main>
 
-  <?php include __DIR__ . '/../includes/product-modal.php'; ?>
+  <?php include __DIR__ . '/../includes/modals/product-modal.php'; ?>
 
   <script>window.isLoggedIn = <?= $is_logged_in ? 'true' : 'false' ?>;</script>
   <script src="../assets/js/product-modal.js"></script>
@@ -175,8 +182,8 @@ $categories = [
     require_once __DIR__ . '/../components/footer.php'; 
   ?>
 
-  <?php include __DIR__ . '/../includes/auth-modal.php'; ?>
-  <?php include __DIR__ . '/../includes/cart-modal.php'; ?>
+  <?php include __DIR__ . '/../includes/modals/login-signup-modal.php'; ?>
+  <?php include __DIR__ . '/../includes/modals/cart-modal.php'; ?>
   <script src="../assets/js/auth.js"></script>
   <script src="../assets/js/cart.js"></script>
 </body>

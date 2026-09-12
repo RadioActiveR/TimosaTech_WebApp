@@ -1,7 +1,13 @@
+<?php
+$modal_hidden = isset($pdo) && function_exists('is_modal_hidden') && is_modal_hidden($pdo, 'modal_product');
+?>
 <!-- PRODUCT DETAILS MODAL -->
   <div class="modal-overlay" id="productModal">
-    <div class="product-modal">
+    <div class="product-modal<?= $modal_hidden ? ' product-modal-veiled' : '' ?>">
       <button class="modal-close" id="closeModal">&times;</button>
+      <?php if ($modal_hidden): ?>
+      <h2 class="hidden">HIDDEN</h2>
+      <?php else: ?>
       <div class="modal-image-container">
         <img id="modalImg" src="" alt="Product Image">
       </div>
@@ -17,5 +23,6 @@
           <button class="btn btn-primary" id="modalAddToCart" type="button">Add to Cart</button>
         </div>
       </div>
+      <?php endif; ?>
     </div>
   </div>

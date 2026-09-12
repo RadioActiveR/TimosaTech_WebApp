@@ -1,4 +1,5 @@
 <?php
+$modal_hidden = isset($pdo) && function_exists('is_modal_hidden') && is_modal_hidden($pdo, 'modal_auth');
 /* INFO: Sign Up / Log In modal
  * Included at the bottom of homepage.php. Submits to auth-handler.php,
  * which validates against MySQL and redirects back here. homepage.php
@@ -14,13 +15,17 @@ $is_open    = isset($auth_tab);
   <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
     <button type="button" class="auth-close" id="authClose" aria-label="Close">&times;</button>
 
+    <?php if ($modal_hidden): ?>
+    <h2 id="authModalTitle" class="hidden">HIDDEN</h2>
+    <?php else: ?>
+
     <div class="auth-tabs">
       <button type="button" class="auth-tab<?= $active_tab === 'login' ? ' active' : '' ?>" data-target="login">Log In</button>
       <button type="button" class="auth-tab<?= $active_tab === 'signup' ? ' active' : '' ?>" data-target="signup">Sign Up</button>
     </div>
 
     <!--INFO: Log In -->
-    <form class="auth-form<?= $active_tab === 'login' ? ' active' : '' ?>" id="loginForm" data-form="login" method="post" action="../includes/auth-handler.php">
+    <form class="auth-form<?= $active_tab === 'login' ? ' active' : '' ?>" id="loginForm" data-form="login" method="post" action="../includes/handlers/login-signup-handler.php">
       <h2 id="authModalTitle">Welcome back</h2>
       <p class="auth-subtext">Log in to manage orders and support tickets.</p>
 
@@ -64,7 +69,7 @@ $is_open    = isset($auth_tab);
     </form>
 
     <!--INFO: Sign Up -->
-    <form class="auth-form<?= $active_tab === 'signup' ? ' active' : '' ?>" id="signupForm" data-form="signup" method="post" action="../includes/auth-handler.php">
+    <form class="auth-form<?= $active_tab === 'signup' ? ' active' : '' ?>" id="signupForm" data-form="signup" method="post" action="../includes/handlers/login-signup-handler.php">
       <h2>Create your account</h2>
       <p class="auth-subtext">Get faster checkout and order tracking.</p>
 
@@ -125,6 +130,8 @@ $is_open    = isset($auth_tab);
 
       <p class="auth-switch">Already have an account? <button type="button" data-target="login">Log in</button></p>
     </form>
+
+    <?php endif; ?>
 
   </div>
 </div>

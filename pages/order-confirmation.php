@@ -8,6 +8,7 @@
 
 session_start();
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/functions/site-control-functions.php';
 
 if (!isset($_SESSION['u_id'])) {
     header("Location: homepage.php");
@@ -15,6 +16,7 @@ if (!isset($_SESSION['u_id'])) {
 }
 
 $u_id      = $_SESSION['u_id'];
+$page_hidden = is_page_hidden($pdo, 'order_confirmation');
 $user_name = $_SESSION['username'] ?? '';
 $is_admin  = ($_SESSION['user_role'] ?? '') === 'admin';
 $order_id  = $_GET['order_id'] ?? '';
@@ -49,7 +51,8 @@ $status_labels = [
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= htmlspecialchars($page_title) ?></title>
-  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <link rel="stylesheet" href="../assets/css/page-veil.css">
 </head>
 <body>
 
@@ -71,12 +74,15 @@ $status_labels = [
         <?php if ($is_admin): ?>
           <a href="../admin/admin-portal.php" class="btn btn-outline admin-nav-btn">Admin Portal</a>
         <?php endif; ?>
-        <a href="../includes/logout.php" class="btn btn-outline">Log Out</a>
+        <a href="../includes/handlers/logout-handler.php" class="btn btn-outline">Log Out</a>
       </div>
     </div>
   </header>
 
   <main class="container checkout-main">
+  <?php if ($page_hidden): ?>
+    <h1 class="hidden"> HIDDEN </h1>
+  <?php else: ?>
     <div class="order-confirm-banner">
       <span class="section-tag">ORDER PLACED</span>
       <h1>Thank you, <?= htmlspecialchars(explode(' ', $order['recipient_name'])[0]) ?>!</h1>
@@ -121,6 +127,7 @@ $status_labels = [
     <div class="center-btn" style="margin-top: 30px;">
       <a href="shop.php" class="btn btn-outline">Continue Shopping →</a>
     </div>
+  <?php endif; ?>
   </main>
 
 </body>

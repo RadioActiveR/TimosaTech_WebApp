@@ -9,21 +9,28 @@
 
 session_start();
 require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../includes/user-profile-functions.php';
+require_once __DIR__ . '/../includes/functions/user-profile-functions.php';
+require_once __DIR__ . '/../includes/functions/site-control-functions.php';
+require_once __DIR__ . '/../includes/functions/cart-functions.php';
 require_once __DIR__ . '/../helpers/icons.php';
 
 // Redirect to home if not logged in
 if (!isset($_SESSION['u_id'])) {
-    header('Location: index.php');
+    header('Location: ../index.php');
     exit;
 }
 
-$current_page = 'profile';
+$is_logged_in = isset($_SESSION['u_id']);
+$cart_count   = $is_logged_in ? get_cart_count($pdo, $_SESSION['u_id']) : 0;
 $user_name    = $_SESSION['username'] ?? '';
 
 $u_id = $_SESSION['u_id'];
+$page_hidden = is_page_hidden($pdo, 'profile');
 $success_msg = '';
 $error_msg = '';
+
+$page_title = "Timosa Tech - Profile";
+$current_page = 'profile';
 
 // Handle Profile Updates
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_profile') {
@@ -56,10 +63,11 @@ $orders = get_user_orders($pdo, $u_id);
   <title>User Profile — Timosa Tech</title>
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/master.css">
-  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../assets/css/styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/page-veil.css">
 </head>
 <body>
 
@@ -70,6 +78,9 @@ $orders = get_user_orders($pdo, $u_id);
 
   <!-- MAIN CONTENT -->
   <main class="profile-main">
+  <?php if ($page_hidden): ?>
+    <h1 class="hidden"> HIDDEN </h1>
+  <?php else: ?>
     <div class="container">
       
       <div class="profile-header-banner">
@@ -220,6 +231,7 @@ $orders = get_user_orders($pdo, $u_id);
         </div>
       </div>
     </div>
+  <?php endif; ?>
   </main>
 
   <!-- INFO: FOOTER SECTION -->

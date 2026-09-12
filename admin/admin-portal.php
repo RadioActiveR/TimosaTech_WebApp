@@ -11,9 +11,10 @@
 
 session_start();
 require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../includes/product-functions.php';
-require_once __DIR__ . '/../includes/order-admin-functions.php';
-require_once __DIR__ . '/../includes/activity-log-functions.php';
+require_once __DIR__ . '/../admin/includes/functions/product-admin-functions.php';
+require_once __DIR__ . '/../admin/includes/functions/order-admin-functions.php';
+require_once __DIR__ . '/../admin/includes/functions/activity-log-admin-functions.php';
+require_once __DIR__ . '/../includes/functions/site-control-functions.php';
 
 // Access Control Protection
 if (!isset($_SESSION['u_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
@@ -26,17 +27,21 @@ $current_page = 'admin';
 $user_name = $_SESSION['username'] ?? 'Admin';
 
 $admin_tabs = [
-    'tickets'  => 'Tickets',
-    'orders'   => 'Orders',
-    'products' => 'Products',
-    'support'  => 'Customer Support Chat',
-    'metrics'  => 'Metrics',
-    'crud_log' => 'CRUD Log'
+    'overview'       => 'Overview',
+    'site_controls' => 'Site Controls',
+    'tickets'       => 'Tickets',
+    'orders'        => 'Orders',
+    'products'      => 'Products',
+    'support'       => 'Customer Support Chat',
+    'crud_log'      => 'CRUD Log'
 ];
 
-$active_tab = $_GET['tab'] ?? 'tickets';
+$controllable_pages = get_controllable_pages();
+$controllable_modals = get_controllable_modals();
+
+$active_tab = $_GET['tab'] ?? 'overview';
 if (!array_key_exists($active_tab, $admin_tabs)) {
-    $active_tab = 'tickets';
+    $active_tab = 'overview';
 }
 
 $order_statuses = [
@@ -54,9 +59,11 @@ $log_actions = [
     'status_change' => 'Status Change',
 ];
 $log_entities = [
-    'product' => 'Product',
-    'order'   => 'Order',
-    'user'    => 'User',
+    'product'         => 'Product',
+    'order'           => 'Order',
+    'user'            => 'User',
+    'page_visibility' => 'Page Visibility',
+    'modal_visibility'=> 'Modal Visibility',
 ];
 
 $message = '';
@@ -152,6 +159,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $error = "Invalid order status update request.";
         }
 
+    } elseif ($_POST['action'] === 'toggle_page_visibility') {
+        $page_key = trim($_POST['page_key'] ?? '');
+        $hidden   = ($_POST['hidden'] ?? '0') === '1';
+
+        if (array_key_exists($page_key, $controllable_pages)) {
+            set_page_hidden($pdo, $page_key, $hidden);
+            log_activity(
+                $pdo, $_SESSION['u_id'], 'update', 'page_visibility', $page_key,
+                ($hidden ? 'Hid' : 'Unhid') . " the \"{$controllable_pages[$page_key]}\" page"
+            );
+            $message = $controllable_pages[$page_key] . ($hidden ? ' is now hidden.' : ' is now visible.');
+        } else {
+            $error = "Unknown page.";
+        }
+
+    } elseif ($_POST['action'] === 'toggle_all_pages') {
+        $hidden = ($_POST['hidden'] ?? '0') === '1';
+
+        set_all_pages_hidden($pdo, $hidden);
+        log_activity(
+            $pdo, $_SESSION['u_id'], 'update', 'page_visibility', 'all',
+            $hidden ? 'Hid every site page' : 'Made every site page visible'
+        );
+        $message = $hidden ? 'All pages are now hidden.' : 'All pages are now visible.';
+
+    } elseif ($_POST['action'] === 'toggle_modal_visibility') {
+        $modal_key = trim($_POST['modal_key'] ?? '');
+        $hidden    = ($_POST['hidden'] ?? '0') === '1';
+
+        if (array_key_exists($modal_key, $controllable_modals)) {
+            set_modal_hidden($pdo, $modal_key, $hidden);
+            log_activity(
+                $pdo, $_SESSION['u_id'], 'update', 'modal_visibility', $modal_key,
+                ($hidden ? 'Hid' : 'Unhid') . " the \"{$controllable_modals[$modal_key]}\""
+            );
+            $message = $controllable_modals[$modal_key] . ($hidden ? ' is now hidden.' : ' is now visible.');
+        } else {
+            $error = "Unknown modal.";
+        }
+
+    } elseif ($_POST['action'] === 'toggle_all_modals') {
+        $hidden = ($_POST['hidden'] ?? '0') === '1';
+
+        set_all_modals_hidden($pdo, $hidden);
+        log_activity(
+            $pdo, $_SESSION['u_id'], 'update', 'modal_visibility', 'all',
+            $hidden ? 'Hid every modal' : 'Made every modal visible'
+        );
+        $message = $hidden ? 'All modals are now hidden.' : 'All modals are now visible.';
+
     } elseif ($_POST['action'] === 'delete_order') {
         $order_id_post  = trim($_POST['order_id'] ?? '');
         $existing_order = $order_id_post !== '' ? get_order_admin($pdo, $order_id_post) : null;
@@ -184,7 +241,7 @@ if (isset($_GET['edit_id'])) {
     $edit_product = $stmt->fetch();
 }
 
-// Fetch data for the Orders tab (list + optional single-order detail view)
+// Fetch data for the Orders tab
 $all_orders           = [];
 $order_status_filter  = 'all';
 $order_search         = '';
@@ -228,9 +285,21 @@ if ($active_tab === 'crud_log') {
     $activity_logs = get_activity_logs($pdo, $log_action_filter, $log_entity_filter, $log_search);
 }
 
+// Fetch data for the Site Controls tab
+$page_visibility  = [];
+$modal_visibility = [];
+$all_pages_hidden = false;
+$all_modals_hidden = false;
+if ($active_tab === 'site_controls') {
+    $page_visibility   = get_all_page_visibility($pdo);
+    $modal_visibility  = get_all_modal_visibility($pdo);
+    $all_pages_hidden  = are_all_pages_hidden($pdo);
+    $all_modals_hidden = are_all_modals_hidden($pdo);
+}
+
 // Fetch data for Metrics tab
 $metrics_data = [];
-if ($active_tab === 'metrics') {
+if ($active_tab === 'overview') {
     $total_users = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
     $total_products = $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
     $total_orders = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
@@ -245,68 +314,9 @@ if ($active_tab === 'metrics') {
   <title><?= htmlspecialchars($page_title) ?></title>
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/master.css">
-  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <link rel="stylesheet" href="../assets/css/admin-portal.css">
   <link rel="stylesheet" href="../assets/css/profile.css">
-  <style>
-    .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    .admin-table th, .admin-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--bg-card-border, #1a2f4c); color: #cbd5e1; }
-    .admin-table th { background: #08121e; color: #0adde0; }
-
-    .status-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      text-transform: capitalize;
-      white-space: nowrap;
-    }
-    .status-pending    { background: rgba(250, 204, 21, 0.12); color: #facc15; }
-    .status-processing { background: rgba(79, 143, 247, 0.12); color: #4f8ff7; }
-    .status-shipped     { background: rgba(10, 221, 238, 0.12); color: #0adde0; }
-    .status-completed   { background: rgba(74, 222, 128, 0.12); color: #4ade80; }
-    .status-cancelled   { background: rgba(248, 113, 113, 0.12); color: #f87171; }
-
-    .log-action-create        { background: rgba(74, 222, 128, 0.12); color: #4ade80; }
-    .log-action-update        { background: rgba(79, 143, 247, 0.12); color: #4f8ff7; }
-    .log-action-delete        { background: rgba(248, 113, 113, 0.12); color: #f87171; }
-    .log-action-status_change { background: rgba(10, 221, 238, 0.12); color: #0adde0; }
-
-    .admin-filter-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
-    .admin-filter-bar select,
-    .admin-filter-bar input[type="text"] {
-      background: var(--bg1);
-      border: 1px solid var(--bg-card-border);
-      color: var(--text-primary);
-      padding: 9px 12px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-family: var(--font-body);
-    }
-
-    .admin-row-actions { display: flex; gap: 8px; align-items: center; }
-    .admin-row-actions form { display: inline; margin: 0; }
-
-    .order-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-    .order-detail-panel {
-      background: #0d192b;
-      border: 1px solid #1a2f4c;
-      border-radius: 8px;
-      padding: 20px;
-    }
-    .order-detail-panel h3 { margin-top: 0; color: #0adde0; font-size: 1rem; }
-    .order-detail-panel p { color: #cbd5e1; font-size: 0.9rem; margin: 4px 0; }
-
-    .order-status-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding-top: 20px; }
-    .order-status-log { margin-top: 10px; font-size: 0.8rem; color: var(--text-muted); max-height: 160px; overflow-y: auto; padding-left: 4px; }
-    .order-status-log li { list-style: none; padding: 6px 0; border-bottom: 1px solid #1a2f4c; }
-    .order-status-log li:last-child { border-bottom: none; }
-
-    @media (max-width: 860px) {
-      .order-detail-grid { grid-template-columns: 1fr; }
-    }
-  </style>
 </head>
 <body class="admin-body">
 
@@ -430,7 +440,7 @@ if ($active_tab === 'metrics') {
         <section class="admin-panel">
 
           <?php if ($view_order): ?>
-            <!-- ============ ORDER DETAIL VIEW ============ -->
+            <!-- ORDER DETAIL VIEW -->
             <a href="?tab=orders" class="btn btn-outline" style="margin-bottom: 20px; padding: 6px 14px; font-size: 0.8rem;">&larr; Back to Orders</a>
 
             <?php if ($message): ?><p style="color: #0ADDEE; margin-bottom: 15px;"><?= htmlspecialchars($message) ?></p><?php endif; ?>
@@ -495,7 +505,7 @@ if ($active_tab === 'metrics') {
                   <ul class="order-status-log">
                     <?php foreach ($view_order_log as $log): ?>
                       <li>
-                        <?= htmlspecialchars($log['old_status'] ?? 'created') ?> &rarr; <strong><?= htmlspecialchars($log['new_status']) ?></strong>
+                        <?= htmlspecialchars($log['old_status'] ?? 'created') ?> -> <strong><?= htmlspecialchars($log['new_status']) ?></strong>
                         by <?= htmlspecialchars($log['changed_by_username'] ?? 'system') ?>
                         on <?= date('M j, g:i A', strtotime($log['changed_at'])) ?>
                       </li>
@@ -532,7 +542,7 @@ if ($active_tab === 'metrics') {
             <a href="?tab=orders" class="btn btn-outline" style="margin-top: 15px;">&larr; Back to Orders</a>
 
           <?php else: ?>
-            <!-- ============ ORDERS LIST VIEW ============ -->
+            <!-- ORDERS LIST VIEW -->
             <h2>Orders Management</h2>
 
             <?php if ($message): ?><p style="color: #0ADDEE; margin-bottom: 15px;"><?= htmlspecialchars($message) ?></p><?php endif; ?>
@@ -590,7 +600,7 @@ if ($active_tab === 'metrics') {
           <?php endif; ?>
         </section>
 
-      <?php elseif ($active_tab === 'metrics'): ?>
+      <?php elseif ($active_tab === 'overview'): ?>
         <section class="admin-panel">
           <h2>Metrics Dashboard</h2>
           <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">
@@ -614,6 +624,116 @@ if ($active_tab === 'metrics') {
               <h3>Total Revenue</h3>
               <p style="font-size: 1.8rem; font-weight: bold; color: #facc15; margin-top: 10px;">₱<?= number_format($total_revenue, 2) ?></p>
             </div>
+          </div>
+        </section>
+
+      <?php elseif ($active_tab === 'site_controls'): ?>
+        <section class="admin-panel">
+          <h2>Blackout Switch</h2>
+          <p class="site-controls-intro">
+            Initiates Protocol "CONTENT VEIL" for Development Hiccups.
+            </br> "HI DEN" placeholder in place of Page/Modal Content.
+          </p>
+
+          <?php if ($message): ?><p style="color: #0ADDEE; margin-bottom: 15px;"><?= htmlspecialchars($message) ?></p><?php endif; ?>
+          <?php if ($error): ?><p style="color: #f87171; margin-bottom: 15px;"><?= htmlspecialchars($error) ?></p><?php endif; ?>
+
+          <h3 style="margin-bottom: 16px; color: #0adde0;">Category: Pages</h3>
+
+          <!-- TOGGLE ALL PAGES -->
+          <form method="post" id="toggle-all-form">
+            <input type="hidden" name="action" value="toggle_all_pages">
+            <input type="hidden" name="hidden" id="toggle-all-hidden-input" value="<?= $all_pages_hidden ? '0' : '1' ?>">
+            <div class="blackout-master-row">
+              <div class="blackout-label">
+                <strong>Hide All Pages</strong>
+                <span>Puts every page into blackout at once.</span>
+              </div>
+              <label class="toggle-switch master">
+                <input type="checkbox"
+                       <?= $all_pages_hidden ? 'checked' : '' ?>
+                       onchange="
+                         document.getElementById('toggle-all-hidden-input').value = this.checked ? '1' : '0';
+                         document.getElementById('toggle-all-form').submit();
+                       ">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </form>
+
+          <!-- PER-PAGE TOGGLES -->
+          <div class="page-visibility-list" style="margin-bottom: 36px;">
+            <?php foreach ($controllable_pages as $key => $label):
+              $is_hidden = $page_visibility[$key] ?? false;
+            ?>
+              <form method="post" class="page-visibility-row <?= $is_hidden ? 'is-hidden' : '' ?>" id="toggle-form-<?= $key ?>">
+                <input type="hidden" name="action" value="toggle_page_visibility">
+                <input type="hidden" name="page_key" value="<?= htmlspecialchars($key) ?>">
+                <input type="hidden" name="hidden" id="toggle-hidden-input-<?= $key ?>" value="<?= $is_hidden ? '0' : '1' ?>">
+                <div>
+                  <span class="page-name"><?= htmlspecialchars($label) ?></span>
+                  <span class="page-status"><?= $is_hidden ? 'Currently hidden from visitors' : 'Currently visible' ?></span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox"
+                         <?= $is_hidden ? 'checked' : '' ?>
+                         onchange="
+                           document.getElementById('toggle-hidden-input-<?= $key ?>').value = this.checked ? '1' : '0';
+                           document.getElementById('toggle-form-<?= $key ?>').submit();
+                         ">
+                  <span class="toggle-slider"></span>
+                </label>
+              </form>
+            <?php endforeach; ?>
+          </div>
+
+          <h3 style="margin-bottom: 16px; color: #0adde0;">Category: Modals</h3>
+
+          <!-- TOGGLE ALL MODALS -->
+          <form method="post" id="toggle-all-modals-form">
+            <input type="hidden" name="action" value="toggle_all_modals">
+            <input type="hidden" name="hidden" id="toggle-all-modals-hidden-input" value="<?= $all_modals_hidden ? '0' : '1' ?>">
+            <div class="blackout-master-row">
+              <div class="blackout-label">
+                <strong>Hide All Modals</strong>
+                <span>Puts every modal into blackout at once.</span>
+              </div>
+              <label class="toggle-switch master">
+                <input type="checkbox"
+                       <?= $all_modals_hidden ? 'checked' : '' ?>
+                       onchange="
+                         document.getElementById('toggle-all-modals-hidden-input').value = this.checked ? '1' : '0';
+                         document.getElementById('toggle-all-modals-form').submit();
+                       ">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </form>
+
+          <!-- PER-MODAL TOGGLES -->
+          <div class="page-visibility-list">
+            <?php foreach ($controllable_modals as $key => $label):
+              $is_hidden = $modal_visibility[$key] ?? false;
+            ?>
+              <form method="post" class="page-visibility-row <?= $is_hidden ? 'is-hidden' : '' ?>" id="toggle-form-<?= $key ?>">
+                <input type="hidden" name="action" value="toggle_modal_visibility">
+                <input type="hidden" name="modal_key" value="<?= htmlspecialchars($key) ?>">
+                <input type="hidden" name="hidden" id="toggle-hidden-input-<?= $key ?>" value="<?= $is_hidden ? '0' : '1' ?>">
+                <div>
+                  <span class="page-name"><?= htmlspecialchars($label) ?></span>
+                  <span class="page-status"><?= $is_hidden ? 'Currently hidden' : 'Currently visible' ?></span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox"
+                         <?= $is_hidden ? 'checked' : '' ?>
+                         onchange="
+                           document.getElementById('toggle-hidden-input-<?= $key ?>').value = this.checked ? '1' : '0';
+                           document.getElementById('toggle-form-<?= $key ?>').submit();
+                         ">
+                  <span class="toggle-slider"></span>
+                </label>
+              </form>
+            <?php endforeach; ?>
           </div>
         </section>
 

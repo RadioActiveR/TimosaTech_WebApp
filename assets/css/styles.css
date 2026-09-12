@@ -1084,6 +1084,15 @@ section { padding: 90px 0; }
   opacity: 1;
 }
 
+/* Used when the modal is toggled hidden in admin: overrides the fixed
+   min-height/flex layout above so the "HIDDEN" placeholder collapses to a
+   natural size instead of leaving a large empty box. */
+.product-modal.product-modal-veiled {
+  min-height: 0;
+  display: block;
+  padding: 40px;
+}
+
 .modal-close {
   position: absolute;
   top: 12px;
