@@ -1,0 +1,372 @@
+/* ==========================================================================
+   ABOUT PAGE — UNIQUE SECTIONS
+   Uses tokens already defined in variables.css / styles.css:
+   --bg1 --bg2 --bg3 --bg5 --bg-card --bg-card-border
+   --text-primary --text-muted --accent-cyan --cyan-gradient
+   --font-heading --font-body --radius-md --radius-lg --container-w
+   ========================================================================== */
+
+/* ---- Hero ---- */
+.about-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 100px 0 0;
+}
+
+.about-hero::before {
+  content: "";
+  position: absolute;
+  top: -15%;
+  right: -10%;
+  width: 620px;
+  height: 620px;
+  background: radial-gradient(circle, rgba(0, 210, 255, 0.13), transparent 70%);
+  pointer-events: none;
+}
+
+.about-hero .container {
+  position: relative;
+  z-index: 1;
+}
+
+.about-hero-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 60px;
+  align-items: center;
+  padding-bottom: 70px;
+}
+
+.about-hero-text h1 {
+  font-size: 2.6rem;
+  max-width: 15ch;
+  margin: 18px 0 22px;
+}
+
+.about-hero-text p {
+  color: var(--text-muted);
+  max-width: 52ch;
+  margin-bottom: 32px;
+}
+
+.about-hero-buttons {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Bench status panel */
+.about-bench-panel {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg);
+  padding: 28px 26px;
+}
+
+.about-bench-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(63, 217, 240, 0.08) 1px, transparent 1px);
+  background-size: 16px 16px;
+  pointer-events: none;
+}
+
+.about-bench-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  color: var(--accent-cyan);
+  margin-bottom: 18px;
+}
+
+.about-bench-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+  box-shadow: 0 0 0 4px rgba(63, 217, 240, 0.15);
+}
+
+.about-bench-list {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.about-bench-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--bg-card-border);
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+.about-bench-list li:first-child { border-top: none; }
+
+.about-bench-pass {
+  color: var(--accent-cyan);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.about-bench-pass::before { content: "✓"; }
+
+.about-bench-footer {
+  position: relative;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--bg-card-border);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ---- Stat strip ---- */
+.about-stat-strip {
+  border-top: 1px solid var(--bg-card-border);
+  border-bottom: 1px solid var(--bg-card-border);
+  background: var(--bg3);
+}
+
+.about-stat-strip .container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.about-stat-item {
+  padding: 30px 20px;
+  text-align: center;
+  border-left: 1px solid var(--bg-card-border);
+}
+.about-stat-item:first-child { border-left: none; }
+
+.about-stat-value {
+  font-family: var(--font-heading);
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+}
+
+.about-stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ---- Story + timeline ---- */
+.about-story { background: var(--bg2); }
+
+.about-story-grid {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 64px;
+  align-items: start;
+}
+
+.about-story-text h2 {
+  font-size: 2rem;
+  max-width: 15ch;
+  margin: 14px 0 20px;
+}
+
+.about-story-text p {
+  color: var(--text-muted);
+  max-width: 46ch;
+  margin-bottom: 16px;
+}
+
+.about-pull-quote {
+  margin-top: 26px;
+  padding-left: 20px;
+  border-left: 3px solid var(--accent-cyan);
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  color: var(--text-primary);
+  max-width: 38ch;
+}
+
+.about-timeline {
+  position: relative;
+}
+
+.about-timeline-item {
+  position: relative;
+  padding-left: 46px;
+  padding-bottom: 38px;
+}
+.about-timeline-item:last-child { padding-bottom: 0; }
+
+.about-timeline-item::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 26px;
+  bottom: -38px;
+  width: 2px;
+  background: var(--bg-card-border);
+}
+.about-timeline-item:last-child::before { display: none; }
+
+.about-timeline-marker {
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 2px solid var(--accent-cyan);
+}
+
+.about-timeline-year {
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  color: var(--accent-cyan);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.about-timeline-item h4 {
+  font-size: 1.02rem;
+  margin-bottom: 6px;
+}
+
+.about-timeline-item p {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  max-width: 44ch;
+}
+
+/* ---- Process ---- */
+.about-process { background: var(--bg3); }
+
+.about-process-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.about-process-row::before {
+  content: "";
+  position: absolute;
+  top: 29px;
+  left: 60px;
+  right: 60px;
+  height: 2px;
+  background: var(--bg-card-border);
+  z-index: 0;
+}
+
+.about-process-step {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.about-process-icon {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: var(--bg5);
+  border: 1px solid var(--bg-card-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.about-process-icon svg { width: 22px; height: 22px; stroke: var(--accent-cyan); }
+
+.about-process-num {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+  color: #06121c;
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.about-process-step h3 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.about-process-step p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  max-width: 26ch;
+  margin: 0 auto;
+}
+
+/* ---- Credentials ---- */
+.about-credentials { background: var(--bg2); padding: 90px 0; }
+
+.about-credentials-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+
+.about-credential-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-md);
+  padding: 26px 22px;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.about-credential-card:hover { border-color: var(--accent-cyan); transform: translateY(-3px); }
+
+.about-credential-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 99px;
+  background: rgba(63, 217, 240, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.about-credential-icon svg { width: 20px; height: 20px; stroke: var(--accent-cyan); }
+
+.about-credential-card h3 { font-size: 1rem; margin-bottom: 8px; }
+.about-credential-card p { font-size: 0.85rem; color: var(--text-muted); }
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+  .about-hero-grid { grid-template-columns: 1fr; gap: 40px; padding-bottom: 50px; }
+  .about-story-grid { grid-template-columns: 1fr; gap: 44px; }
+  .about-process-row { grid-template-columns: repeat(2, 1fr); row-gap: 40px; }
+  .about-process-row::before { display: none; }
+  .about-stat-strip .container { grid-template-columns: repeat(2, 1fr); }
+  .about-stat-item:nth-child(3) { border-left: none; }
+  .about-credentials-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .about-hero-text h1 { font-size: 2.1rem; max-width: none; }
+  .about-process-row { grid-template-columns: 1fr; }
+  .about-stat-strip .container { grid-template-columns: 1fr; }
+  .about-stat-item { border-left: none !important; border-top: 1px solid var(--bg-card-border); }
+  .about-stat-item:first-child { border-top: none; }
+  .about-credentials-grid { grid-template-columns: 1fr; }
+}

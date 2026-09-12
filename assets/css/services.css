@@ -1,0 +1,238 @@
+/* ==========================================================================
+   SERVICES PAGE — UNIQUE SECTIONS
+   Uses tokens already defined in variables.css / styles.css
+   ========================================================================== */
+
+/* ---- Hero ---- */
+.svc-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 100px 0 60px;
+  text-align: center;
+}
+
+.svc-hero::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 900px;
+  height: 500px;
+  background: radial-gradient(ellipse, rgba(0, 210, 255, 0.12), transparent 70%);
+  pointer-events: none;
+}
+
+.svc-hero .container {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+}
+
+.svc-hero .section-tag {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.svc-hero h1 {
+  font-size: 2.4rem;
+  margin: 14px 0 20px;
+}
+
+.svc-hero p {
+  color: var(--text-muted);
+  max-width: 56ch;
+  margin: 0 auto;
+}
+
+/* ---- Quick nav ---- */
+.svc-quicknav {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 34px;
+}
+
+.svc-quicknav a {
+  padding: 9px 18px;
+  border: 1px solid var(--bg-card-border);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.svc-quicknav a:hover {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+/* ---- Service blocks ---- */
+.svc-block {
+  padding: 80px 0;
+  scroll-margin-top: 90px;
+}
+
+.svc-block:nth-child(even) { background: var(--bg3); }
+
+.svc-block .container {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.svc-block.reverse .container {
+  grid-template-columns: 0.9fr 1.1fr;
+}
+.svc-block.reverse .svc-visual { order: -1; }
+
+.svc-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.svc-new-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #06121c;
+  background: var(--accent-cyan);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.svc-content h2 {
+  font-size: 1.8rem;
+  margin-bottom: 14px;
+}
+
+.svc-content > p {
+  color: var(--text-muted);
+  max-width: 50ch;
+  margin-bottom: 24px;
+}
+
+.svc-steps {
+  list-style: none;
+  margin: 0 0 28px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.svc-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.svc-steps .svc-step-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan);
+  font-family: var(--font-heading);
+  font-size: 0.68rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.svc-steps strong { color: var(--text-primary); }
+
+/* ---- Visual panel ---- */
+.svc-visual {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg);
+  padding: 34px;
+  position: relative;
+  overflow: hidden;
+}
+
+.svc-visual::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(63, 217, 240, 0.09) 1px, transparent 1px);
+  background-size: 16px 16px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.svc-visual-icon {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  background: rgba(63, 217, 240, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 22px;
+}
+.svc-visual-icon svg { width: 26px; height: 26px; stroke: var(--accent-cyan); }
+
+.svc-visual-facts {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.svc-fact-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.86rem;
+  padding: 10px 0;
+  border-top: 1px solid var(--bg-card-border);
+}
+.svc-fact-row:first-child { border-top: none; }
+.svc-fact-row span:first-child { color: var(--text-muted); }
+.svc-fact-row span:last-child { color: var(--text-primary); font-weight: 600; }
+
+/* ---- Not sure / help note ---- */
+.svc-help-note {
+  text-align: center;
+  padding: 60px 0 90px;
+  background: var(--bg2);
+}
+
+.svc-help-note h3 {
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+}
+
+.svc-help-note p {
+  color: var(--text-muted);
+  max-width: 48ch;
+  margin: 0 auto 22px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+  .svc-block .container,
+  .svc-block.reverse .container {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .svc-block.reverse .svc-visual { order: 0; }
+  .svc-visual { order: -1; }
+}
+
+@media (max-width: 600px) {
+  .svc-hero h1 { font-size: 1.9rem; }
+  .svc-quicknav { gap: 8px; }
+  .svc-quicknav a { padding: 7px 14px; font-size: 0.8rem; }
+}

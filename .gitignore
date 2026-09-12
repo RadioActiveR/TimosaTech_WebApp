@@ -1,1 +1,5 @@
-<!-- INFO: Empty/Placeholder File -->
+<!-- INFO: .gitignore -->
+
+.env
+schema.sql
+timosatech_db.sql
