@@ -2,5 +2,5 @@
 session_start();
 $_SESSION = [];
 session_destroy();
-header("Location: ../pages/homepage.php");
+header("Location: /TimosaTech/pages/homepage.php");
 exit;

@@ -239,5 +239,9 @@ $orders = get_user_orders($pdo, $u_id);
     require_once __DIR__ . '/../components/footer.php'; 
   ?>
 
+  <script>window.isLoggedIn = <?= $is_logged_in ? 'true' : 'false' ?>;</script>
+  <?php include __DIR__ . '/../includes/modals/cart-modal.php'; ?>
+  <script src="../assets/js/cart.js"></script>
+
 </body>
 </html>

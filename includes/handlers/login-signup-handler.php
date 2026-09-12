@@ -10,7 +10,7 @@
 */
 
 session_start();
-require __DIR__ . '/../config/db.php';
+require __DIR__ . '/../../config/db.php';
 
 function redirect_back(string $tab, ?string $error = null): void {
     if ($error !== null) {
@@ -115,7 +115,7 @@ if ($action === 'login') {
 
     // Redirect based on role
     if ($user['role'] === 'admin') {
-        header("Location: ../admin/admin-portal.php");
+        header("Location: /TimosaTech/admin/admin-portal.php");
     } else {
         header("Location: ../pages/homepage.php");
     }
