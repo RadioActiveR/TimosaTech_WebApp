@@ -31,3 +31,33 @@
   width: 100%;
   margin-top: 18px;
 }
+
+/* Wraps the back button + summary card so the button sits above it,
+   stacked in the same right-hand column. */
+.checkout-summary-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.checkout-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin-bottom: 12px;
+  padding: 8px 14px;
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  background: transparent;
+  transition: border-color 0.15s ease, color 0.15s ease,
+              background-color 0.15s ease, transform 0.15s ease;
+}
+
+.checkout-back-btn:hover {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  background: rgba(10, 221, 238, 0.08);
+  transform: translateY(-1px);
+}

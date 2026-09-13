@@ -300,7 +300,168 @@
 }
 
 /* =========================================
-   6. Media Queries
+   6. Product Image Previews & File Input
+   ========================================= */
+.admin-file-input {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+}
+
+.admin-file-input::file-selector-button {
+  background: var(--accent-cyan);
+  color: #06121c;
+  border: none;
+  padding: 9px 16px;
+  margin-right: 12px;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.admin-file-input::file-selector-button:hover { background: #38e6f2; }
+
+/* Older WebKit alias — same look, kept in sync manually since it doesn't
+   fall back to the standard property above */
+.admin-file-input::-webkit-file-upload-button {
+  background: var(--accent-cyan);
+  color: #06121c;
+  border: none;
+  padding: 9px 16px;
+  margin-right: 12px;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.admin-file-input::-webkit-file-upload-button:hover { background: #38e6f2; }
+
+.admin-image-preview-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.admin-image-thumb-wrap {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--bg-card-border);
+  background: var(--bg1);
+  flex-shrink: 0;
+  display: block;
+}
+
+.admin-image-thumb-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Remove button on *newly selected* previews (not yet uploaded) */
+.admin-image-remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(8, 12, 20, 0.8);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+.admin-image-remove-btn:hover { background: rgba(220, 38, 38, 0.9); }
+
+.admin-image-primary-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: var(--accent-cyan);
+  color: #06121c;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
+/* Only rendered next to *existing* images (not new-upload previews), so
+   there's always a checkbox input inside to toggle */
+.admin-image-remove-overlay {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+  padding: 4px 0;
+  font-size: 0.68rem;
+  color: #fff;
+  background: rgba(220, 38, 38, 0.85);
+  cursor: pointer;
+}
+.admin-image-remove-overlay input { margin: 0; }
+
+.admin-table-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--bg-card-border);
+  display: block;
+}
+
+/* =========================================
+   7. Stock Level Warnings
+   ========================================= */
+/* "Good" (50+) stock rows stay visually neutral — nothing to flag.
+   Low/critical rows get a quiet background tint + a thin left-edge
+   accent on the first cell, enough to scan down the list at a glance
+   without the whole row "glowing". */
+.admin-table tr.stock-row-low td {
+  background: rgba(250, 204, 21, 0.05);
+}
+.admin-table tr.stock-row-critical td {
+  background: rgba(248, 113, 113, 0.06);
+}
+
+.admin-table tr.stock-row-low td:first-child {
+  border-left: 3px solid #facc15;
+}
+.admin-table tr.stock-row-critical td:first-child {
+  border-left: 3px solid #f87171;
+}
+
+.stock-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.stock-badge-good     { background: rgba(74, 222, 128, 0.12); color: #4ade80; }
+.stock-badge-low      { background: rgba(250, 204, 21, 0.12); color: #facc15; }
+.stock-badge-critical { background: rgba(248, 113, 113, 0.12); color: #f87171; }
+
+/* =========================================
+   8. Media Queries
    ========================================= */
 @media (max-width: 860px) {
   .order-detail-grid { 

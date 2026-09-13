@@ -59,9 +59,7 @@ if (!$modal_hidden && isset($_SESSION['u_id'])) {
           <p class="cart-empty-msg">Your cart is empty.</p>
         <?php else: ?>
           <?php foreach ($cart_items as $item):
-            $img_src = !empty($item['image_data'])
-              ? 'data:' . htmlspecialchars($item['mime_type'] ?? 'image/png') . ';base64,' . $item['image_data']
-              : '../images/workstation-rig.png';
+            $img_src = $item['image_url'];
           ?>
             <div class="cart-item" data-cart-item-id="<?= $item['cart_item_id'] ?>">
               <label class="cart-item-select">
@@ -72,7 +70,7 @@ if (!$modal_hidden && isset($_SESSION['u_id'])) {
                        aria-label="Select <?= htmlspecialchars($item['name']) ?> for checkout"
                        checked>
               </label>
-              <img src="<?= $img_src ?>" alt="<?= htmlspecialchars($item['name']) ?>">
+              <img src="<?= htmlspecialchars($img_src) ?>" alt="<?= htmlspecialchars($item['name']) ?>">
               <div class="cart-item-info">
                 <h4><?= htmlspecialchars($item['name']) ?></h4>
                 <span class="cart-item-price">₱<?= number_format($item['price'], 2) ?></span>

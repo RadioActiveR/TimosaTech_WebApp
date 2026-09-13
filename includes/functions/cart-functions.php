@@ -5,20 +5,22 @@
  * never silently hold more than what's actually available.
  */
 
-// Returns every cart row for a user, joined to its product + image.
+require_once __DIR__ . '/product-image-functions.php';
+
+// Returns every cart row for a user, joined to its product, with a
+// resolved `image_url` for the product's primary photo attached to each
+// row (see attach_cart_image_urls() below).
 function get_cart_items(PDO $pdo, string $u_id): array {
     $stmt = $pdo->prepare("
         SELECT ci.cart_item_id, ci.product_id, ci.quantity,
-               p.name, p.price, p.stock, p.category,
-               i.image_data, i.mime_type
+               p.name, p.price, p.stock, p.category
         FROM cart_items ci
         JOIN products p ON ci.product_id = p.product_id
-        LEFT JOIN images i ON p.image_id = i.image_id
         WHERE ci.u_id = ?
         ORDER BY ci.added_at DESC
     ");
     $stmt->execute([$u_id]);
-    return $stmt->fetchAll();
+    return attach_cart_image_urls($pdo, $stmt->fetchAll());
 }
 
 // Returns only the cart rows matching the given cart_item_ids — scoped to
@@ -35,16 +37,36 @@ function get_cart_items_by_ids(PDO $pdo, string $u_id, array $cart_item_ids): ar
     $placeholders = implode(',', array_fill(0, count($cart_item_ids), '?'));
     $stmt = $pdo->prepare("
         SELECT ci.cart_item_id, ci.product_id, ci.quantity,
-               p.name, p.price, p.stock, p.category,
-               i.image_data, i.mime_type
+               p.name, p.price, p.stock, p.category
         FROM cart_items ci
         JOIN products p ON ci.product_id = p.product_id
-        LEFT JOIN images i ON p.image_id = i.image_id
         WHERE ci.u_id = ? AND ci.cart_item_id IN ($placeholders)
         ORDER BY ci.added_at DESC
     ");
     $stmt->execute(array_merge([$u_id], $cart_item_ids));
-    return $stmt->fetchAll();
+    return attach_cart_image_urls($pdo, $stmt->fetchAll());
+}
+
+// Batch-fetches each row's product's primary image and attaches it as
+// $row['image_url'] (a real ../assets/... path, or the shared placeholder
+// if the product has no images) — replaces the old image_data/mime_type
+// columns that came from the removed base64 `images` table.
+function attach_cart_image_urls(PDO $pdo, array $rows): array {
+    if (empty($rows)) {
+        return $rows;
+    }
+
+    $product_ids = array_column($rows, 'product_id');
+    $images_map = get_product_images_for_ids($pdo, $product_ids);
+
+    foreach ($rows as &$row) {
+        $images = $images_map[$row['product_id']] ?? [];
+        $urls = get_product_image_urls($images);
+        $row['image_url'] = $urls[0];
+    }
+    unset($row);
+
+    return $rows;
 }
 
 // Central place that decides "which cart items is this checkout for".

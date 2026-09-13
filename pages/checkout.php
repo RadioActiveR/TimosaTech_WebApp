@@ -59,7 +59,7 @@ $grand_total  = $subtotal + $shipping_fee;
 // Fetch user profile data to auto-fill shipping fields
 $user_profile = get_user_profile($pdo, $u_id);
 
-$default_recipient = trim(($user_profile['first_name'] ?? '') . ' ' . ($user_profile['last_name'] ?? ''));
+$default_recipient = $user_profile['full_name'] ?? '';
 $default_phone     = $user_profile['phone_number'] ?? '';
 $default_addr1     = $user_profile['address_line1'] ?? '';
 $default_addr2     = $user_profile['address_line2'] ?? '';
@@ -71,8 +71,9 @@ $default_postal    = $user_profile['postal_code'] ?? '';
 $checkout_error = $_SESSION['checkout_error'] ?? null;
 unset($_SESSION['checkout_error']);
 
-$page_title = "Timosa Tech - Checkout";
+$page_title   = "Timosa Tech - Checkout";
 $current_page = 'checkout';
+$is_logged_in = true; // this page already requires a session, see the redirect above
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -80,6 +81,7 @@ $current_page = 'checkout';
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= htmlspecialchars($page_title) ?></title>
+  <link rel="icon" type="image/png" href="../assets/images/TimosaTechLogo.png">
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/styles.css">
   <link rel="stylesheet" href="../assets/css/page-veil.css">
@@ -180,7 +182,10 @@ $current_page = 'checkout';
         </div>
 
         <!-- Right Column: Order Summary -->
-        <aside class="checkout-summary">
+        <div class="checkout-summary-col">
+          <a href="shop.php" class="checkout-back-btn">&larr; Back to Shop</a>
+
+          <aside class="checkout-summary">
           <h3>Order Summary</h3>
 
           <div class="checkout-summary-items">
@@ -208,7 +213,8 @@ $current_page = 'checkout';
           <?php endforeach; ?>
 
           <button type="submit" class="btn btn-primary checkout-summary-submit">Place Order</button>
-        </aside>
+          </aside>
+        </div>
 
       </form>
     </div>

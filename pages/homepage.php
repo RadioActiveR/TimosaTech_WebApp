@@ -16,6 +16,7 @@ session_start();
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/functions/cart-functions.php';
 require_once __DIR__ . '/../includes/functions/site-control-functions.php';
+require_once __DIR__ . '/../includes/functions/product-image-functions.php';
 require_once __DIR__ . '/../helpers/icons.php';
 
 $page_hidden = is_page_hidden($pdo, 'home');
@@ -96,14 +97,15 @@ $features = [
 ];
 
 $stmt = $pdo->prepare("
-    SELECT p.*, i.image_data, i.mime_type 
+    SELECT p.* 
     FROM products p 
-    LEFT JOIN images i ON p.image_id = i.image_id 
     ORDER BY p.price DESC 
     LIMIT 3
 ");
 $stmt->execute();
 $products = $stmt->fetchAll();
+
+$product_images_map = get_product_images_for_ids($pdo, array_column($products, 'product_id'));
 
 ?>
 
@@ -113,12 +115,17 @@ $products = $stmt->fetchAll();
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta property="og:image" content="https://laxative-daylong-spirits.ngrok-free.dev/TimosaTech/assets/images/TimosaTechLogo.png">
+  
   <title><?= htmlspecialchars($page_title) ?></title>
+  <link rel="icon" type="image/png" href="../assets/images/TimosaTechLogo.png">
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/master.css">
   <link rel="stylesheet" href="../assets/css/styles.css">
   <link rel="stylesheet" href="../assets/css/cart-modal.css">
   <link rel="stylesheet" href="../assets/css/profile.css">
+  <link rel="stylesheet" href="../assets/css/product-modal.css">
   <link rel="stylesheet" href="../assets/css/page-veil.css">
 </head>
 
@@ -188,13 +195,13 @@ $products = $stmt->fetchAll();
 
         <div class="products-grid">
           <?php foreach ($products as $product): 
-            $img_src = !empty($product['image_data']) 
-              ? 'data:' . htmlspecialchars($product['mime_type'] ?? 'image/png') . ';base64,' . $product['image_data'] 
-              : '../assets/images/workstation-rig.png';
+            $product_images = $product_images_map[$product['product_id']] ?? [];
+            $image_urls = get_product_image_urls($product_images);
+            $img_src = $image_urls[0];
           ?>
             <div class="product-card">
               <div class="product-thumb">
-                <img src="<?= $img_src ?>" 
+                <img src="<?= htmlspecialchars($img_src) ?>" 
                      alt="<?= htmlspecialchars($product['name']) ?>"
                      style="width: 100%; height: 100%; object-fit: cover; display: block;">
               </div>
@@ -225,7 +232,8 @@ $products = $stmt->fetchAll();
                             data-stock="<?= intval($product['stock']) ?>"
                             data-category="<?= htmlspecialchars($categories[$product['category']] ?? $product['category']) ?>"
                             data-desc="<?= htmlspecialchars($product['description'] ?? 'No detailed description available.') ?>"
-                            data-img="<?= $img_src ?>">
+                            data-img="<?= htmlspecialchars($img_src) ?>"
+                            data-images="<?= htmlspecialchars(json_encode($image_urls)) ?>">
                       View Details
                     </button>
                   </div>

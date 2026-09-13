@@ -25,7 +25,7 @@ function redirect_back(string $tab, ?string $error = null): void {
         'identity' => trim($_POST['identity'] ?? '')
     ];
 
-    header("Location: ../pages/homepage.php");
+    header("Location: ../../pages/homepage.php");
     exit;
 }
 
@@ -87,7 +87,7 @@ if ($action === 'signup') {
     $_SESSION['username']  = $username;
     $_SESSION['user_role'] = 'user';
 
-    header("Location: ../pages/homepage.php");
+    header("Location: ../../pages/homepage.php");
     exit;
 }
 
@@ -117,7 +117,7 @@ if ($action === 'login') {
     if ($user['role'] === 'admin') {
         header("Location: /TimosaTech/admin/admin-portal.php");
     } else {
-        header("Location: ../pages/homepage.php");
+        header("Location: ../../pages/homepage.php");
     }
     exit;
 }

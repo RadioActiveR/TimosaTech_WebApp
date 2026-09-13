@@ -1,11 +1,8 @@
 <?php
 // Determine component view modes based on $current_page
-$is_admin_page    = (isset($current_page) && $current_page === 'admin');
-$is_profile_page  = (isset($current_page) && $current_page === 'profile');
-
-// Pages can opt in to a logo-only header (no nav links, no cart/profile/admin actions)
-// by setting `$minimal_header = true;` before including this file.
-$is_minimal_header = !empty($minimal_header);
+$is_admin_page     = (isset($current_page) && $current_page === 'admin');
+$is_profile_page   = (isset($current_page) && $current_page === 'profile');
+$is_minimal_header = (isset($current_page) && in_array($current_page, ['order_confirmation', 'checkout'], true));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -15,7 +12,7 @@ $is_minimal_header = !empty($minimal_header);
   <title><?= htmlspecialchars($page_title ?? 'Timosa Tech') ?></title>
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/master.css">
-  <link rel="stylesheet" href="../styles/styles.css">
+  <link rel="stylesheet" href="../assets/css/styles.css">
   <link rel="stylesheet" href="../assets/css/profile.css">
 </head>
 <body>

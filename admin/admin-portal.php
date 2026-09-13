@@ -80,36 +80,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $stock      = intval($_POST['stock'] ?? 0);
         $product_id = intval($_POST['product_id'] ?? 0);
 
-        $base64_data = null;
-        $mime_type   = 'image/png';
+        $uploaded_images = $_FILES['images'] ?? [];
+        $remove_image_ids = array_map('intval', $_POST['remove_images'] ?? []);
 
-        if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] === UPLOAD_ERR_OK) {
-            $file_tmp  = $_FILES['product_image']['tmp_name'];
-            $file_type = $_FILES['product_image']['type'];
-
-            $file_contents = file_get_contents($file_tmp);
-            $base64_data   = base64_encode($file_contents);
-            $mime_type     = $file_type;
-        }
-
-        if ($name && $category && $price >= 0) {
+        if (!$name || !$category) {
+            $error = "Please fill in all required fields.";
+        } elseif ($price < 0 || $stock < 0) {
+            $error = "Price and stock quantity cannot be negative.";
+        } else {
             if ($_POST['action'] === 'add_product') {
-                $new_product_id = add_product_with_image($pdo, $name, $category, $desc, $price, $stock, $base64_data, $mime_type);
+                $new_product_id = add_product_with_images($pdo, $name, $category, $desc, $price, $stock, $uploaded_images);
                 log_activity(
                     $pdo, $_SESSION['u_id'], 'create', 'product', (string) $new_product_id,
                     "Added product \"$name\" (category: $category, price: $" . number_format($price, 2) . ", stock: $stock)"
                 );
                 $message = "Product added successfully!";
             } elseif ($_POST['action'] === 'edit_product' && $product_id > 0) {
-                update_product_with_image($pdo, $product_id, $name, $category, $desc, $price, $stock, $base64_data, $mime_type);
+                update_product_with_images($pdo, $product_id, $name, $category, $desc, $price, $stock, $uploaded_images, $remove_image_ids);
                 log_activity(
                     $pdo, $_SESSION['u_id'], 'update', 'product', (string) $product_id,
                     "Updated product \"$name\" (category: $category, price: $" . number_format($price, 2) . ", stock: $stock)"
                 );
                 $message = "Product updated successfully!";
             }
-        } else {
-            $error = "Please fill in all required fields.";
         }
 
     } elseif ($_POST['action'] === 'delete_product') {
@@ -227,18 +220,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 // Fetch all products for the Products management table
 $all_products = [];
+$all_products_images = [];
 if ($active_tab === 'products') {
-    $stmt = $pdo->query("SELECT p.*, i.image_data, i.mime_type FROM products p LEFT JOIN images i ON p.image_id = i.image_id ORDER BY p.product_id DESC");
+    $stmt = $pdo->query("SELECT * FROM products ORDER BY product_id DESC");
     $all_products = $stmt->fetchAll();
+    $all_products_images = get_product_images_for_ids($pdo, array_column($all_products, 'product_id'));
 }
 
 // Check if editing a specific product
 $edit_product = null;
+$edit_product_images = [];
 if (isset($_GET['edit_id'])) {
     $edit_id = intval($_GET['edit_id']);
     $stmt = $pdo->prepare("SELECT * FROM products WHERE product_id = ?");
     $stmt->execute([$edit_id]);
     $edit_product = $stmt->fetch();
+    if ($edit_product) {
+        $edit_product_images = get_product_images($pdo, $edit_id);
+    }
 }
 
 // Fetch data for the Orders tab
@@ -312,10 +311,11 @@ if ($active_tab === 'overview') {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= htmlspecialchars($page_title) ?></title>
+  <link rel="icon" type="image/png" href="../assets/images/TimosaTechLogo.png">
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/master.css">
   <link rel="stylesheet" href="../assets/css/styles.css">
-  <link rel="stylesheet" href="../assets/css/admin-portal.css">
+  <link rel="stylesheet" href="assets/css/admin-portal.css">
   <link rel="stylesheet" href="../assets/css/profile.css">
 </head>
 <body class="admin-body">
@@ -377,18 +377,37 @@ if ($active_tab === 'overview') {
               <div style="display: flex; gap: 15px;">
                 <div class="auth-field" style="flex: 1;">
                   <label>Price ($) *</label>
-                  <input type="number" step="0.01" name="price" value="<?= htmlspecialchars($edit_product['price'] ?? '') ?>" required>
+                  <input type="number" step="0.01" min="0" name="price" value="<?= htmlspecialchars($edit_product['price'] ?? '') ?>" required>
                 </div>
                 <div class="auth-field" style="flex: 1;">
                   <label>Stock Quantity *</label>
-                  <input type="number" name="stock" value="<?= htmlspecialchars($edit_product['stock'] ?? '10') ?>" required>
+                  <input type="number" min="0" name="stock" value="<?= htmlspecialchars($edit_product['stock'] ?? '10') ?>" required>
               </div>
               </div>
 
               <div class="auth-field">
-                <label>Product Image <?= $edit_product ? '(Leave blank to keep current image)' : '' ?></label>
-                <input type="file" name="product_image" accept="image/*">
+                <label>Product Images<?= $edit_product ? ' (add more below, or remove existing ones)' : '' ?></label>
+                <input type="file" name="images[]" id="productImagesInput" class="admin-file-input" accept="image/*" multiple>
+                <div class="admin-image-preview-row" id="newImagePreviewRow"></div>
               </div>
+
+              <?php if ($edit_product && !empty($edit_product_images)): ?>
+                <div class="auth-field">
+                  <label>Current Images <span style="font-weight: 400; color: var(--text-muted);">(check to remove on save)</span></label>
+                  <div class="admin-image-preview-row">
+                    <?php foreach ($edit_product_images as $img): ?>
+                      <label class="admin-image-thumb-wrap">
+                        <img src="../<?= htmlspecialchars($img['image_path']) ?>" alt="">
+                        <?php if ($img['is_primary']): ?><span class="admin-image-primary-badge">Primary</span><?php endif; ?>
+                        <span class="admin-image-remove-overlay">
+                          <input type="checkbox" name="remove_images[]" value="<?= $img['product_image_id'] ?>">
+                          Remove
+                        </span>
+                      </label>
+                    <?php endforeach; ?>
+                  </div>
+                </div>
+              <?php endif; ?>
 
               <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <button type="submit" class="btn btn-primary"><?= $edit_product ? 'Update Product' : 'Add Product' ?></button>
@@ -399,11 +418,62 @@ if ($active_tab === 'overview') {
             </form>
           </div>
 
+          <script>
+            (function () {
+              const input = document.getElementById('productImagesInput');
+              const row = document.getElementById('newImagePreviewRow');
+              if (!input || !row) return;
+
+              // The native file input replaces its whole selection every
+              // time you open the picker, so we track the "real" list of
+              // chosen files ourselves and rewrite input.files from it —
+              // that's what lets picks from separate picker sessions add
+              // up instead of overwriting each other.
+              let selectedFiles = [];
+
+              function syncInputFiles() {
+                const dt = new DataTransfer();
+                selectedFiles.forEach((file) => dt.items.add(file));
+                input.files = dt.files;
+              }
+
+              function renderPreviews() {
+                row.innerHTML = '';
+
+                selectedFiles.forEach((file, index) => {
+                  const reader = new FileReader();
+                  reader.onload = (ev) => {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'admin-image-thumb-wrap';
+                    wrap.innerHTML = `
+                      <img src="${ev.target.result}" alt="">
+                      <button type="button" class="admin-image-remove-btn" aria-label="Remove image">&times;</button>
+                    `;
+                    wrap.querySelector('.admin-image-remove-btn').addEventListener('click', () => {
+                      selectedFiles.splice(index, 1);
+                      syncInputFiles();
+                      renderPreviews();
+                    });
+                    row.appendChild(wrap);
+                  };
+                  reader.readAsDataURL(file);
+                });
+              }
+
+              input.addEventListener('change', (e) => {
+                selectedFiles = selectedFiles.concat(Array.from(e.target.files));
+                syncInputFiles();
+                renderPreviews();
+              });
+            })();
+          </script>
+
           <!-- INVENTORY TABLE -->
           <h3>Current Inventory</h3>
           <table class="admin-table">
             <thead>
               <tr>
+                <th>Image</th>
                 <th>ID</th>
                 <th>Name</th>
                 <th>Category</th>
@@ -413,13 +483,32 @@ if ($active_tab === 'overview') {
               </tr>
             </thead>
             <tbody>
-              <?php foreach ($all_products as $p): ?>
-                <tr>
+              <?php foreach ($all_products as $p):
+                $p_images = $all_products_images[$p['product_id']] ?? [];
+                $p_primary = get_primary_image($p_images);
+
+                $p_stock = (int) $p['stock'];
+                if ($p_stock <= 10) {
+                    $stock_level = 'critical';
+                } elseif ($p_stock < 50) {
+                    $stock_level = 'low';
+                } else {
+                    $stock_level = 'good';
+                }
+              ?>
+                <tr class="stock-row-<?= $stock_level ?>">
+                  <td>
+                    <?php if ($p_primary): ?>
+                      <img class="admin-table-thumb" src="../<?= htmlspecialchars($p_primary['image_path']) ?>" alt="">
+                    <?php else: ?>
+                      <img class="admin-table-thumb" src="../assets/images/workstation-rig.png" alt="">
+                    <?php endif; ?>
+                  </td>
                   <td>#<?= $p['product_id'] ?></td>
                   <td><strong><?= htmlspecialchars($p['name']) ?></strong></td>
                   <td><?= htmlspecialchars($p['category']) ?></td>
                   <td>₱<?= number_format($p['price'], 2) ?></td>
-                  <td><?= $p['stock'] ?></td>
+                  <td><span class="stock-badge stock-badge-<?= $stock_level ?>"><?= $p_stock ?></span></td>
                   <td>
                     <div class="admin-row-actions">
                       <a href="?tab=products&edit_id=<?= $p['product_id'] ?>" class="btn btn-outline" style="padding: 4px 10px; font-size: 0.8rem;">Edit</a>
@@ -431,6 +520,7 @@ if ($active_tab === 'overview') {
                     </div>
                   </td>
                 </tr>
+
               <?php endforeach; ?>
             </tbody>
           </table>

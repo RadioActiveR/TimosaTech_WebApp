@@ -127,3 +127,38 @@
 }
 .cart-total-row strong { color: var(--accent-cyan); font-size: 1.15rem; }
 .cart-order-btn { width: 100%; justify-content: center; text-align: center; }
+
+/* Moved from styles.css — select-all row, item checkboxes, and disabled
+   order-button state. These were missed in the original split since they
+   weren't contiguous with the rest of the cart-modal block. */
+.cart-select-all-row {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cart-select-all-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.cart-item-select {
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+}
+
+.cart-item-select input[type="checkbox"],
+.cart-item-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.cart-order-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}

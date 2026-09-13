@@ -48,11 +48,9 @@ switch ($action) {
 $items = get_cart_items($pdo, $u_id);
 $total = 0;
 foreach ($items as &$item) {
-    $item['subtotal']   = round($item['price'] * $item['quantity'], 2);
-    $item['image_src']  = !empty($item['image_data'])
-        ? 'data:' . ($item['mime_type'] ?: 'image/png') . ';base64,' . $item['image_data']
-        : '../images/workstation-rig.png';
-    unset($item['image_data'], $item['mime_type']);
+    $item['subtotal']  = round($item['price'] * $item['quantity'], 2);
+    $item['image_src'] = $item['image_url'];
+    unset($item['image_url']);
     $total += $item['subtotal'];
 }
 unset($item);

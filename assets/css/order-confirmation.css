@@ -25,3 +25,7 @@
 .order-confirmation-continue-wrap {
   margin-top: 30px;
 }
+/* Moved from styles.css — the "Thank you" banner, unique to this page. */
+.order-confirm-banner { text-align: center; margin-bottom: 40px; }
+.order-confirm-banner h1 { margin: 8px 0 12px; }
+.order-confirm-banner p { color: var(--text-muted); }

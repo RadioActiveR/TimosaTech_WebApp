@@ -11,6 +11,7 @@ session_start();
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/functions/cart-functions.php';
 require_once __DIR__ . '/../includes/functions/site-control-functions.php';
+require_once __DIR__ . '/../includes/functions/product-image-functions.php';
 require_once __DIR__ . '/../helpers/icons.php';
 
 $is_logged_in = isset($_SESSION['u_id']);
@@ -26,9 +27,7 @@ $current_page = 'shop';
 $selected_category = $_GET['category'] ?? 'all';
 $search_query      = trim($_GET['search'] ?? '');
 
-$sql = "SELECT p.*, i.image_data, i.mime_type 
-        FROM products p 
-        LEFT JOIN images i ON p.image_id = i.image_id WHERE 1=1";
+$sql = "SELECT p.* FROM products p WHERE 1=1";
 $params = [];
 
 if ($selected_category !== 'all') {
@@ -42,10 +41,12 @@ if ($search_query !== '') {
     $params[] = "%$search_query%";
 }
 
-$sql .= " ORDER BY p.product_id DESC";
+$sql .= " ORDER BY (p.stock <= 0) ASC, RAND()";
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $products = $stmt->fetchAll();
+
+$product_images_map = get_product_images_for_ids($pdo, array_column($products, 'product_id'));
 
 $categories = [
     'all'          => 'All Products',
@@ -63,12 +64,15 @@ $categories = [
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= htmlspecialchars($page_title) ?></title>
+  <link rel="icon" type="image/png" href="../assets/images/TimosaTechLogo.png">
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/master.css">
   <link rel="stylesheet" href="../assets/css/styles.css">
   <link rel="stylesheet" href="../assets/css/cart-modal.css">
   <link rel="stylesheet" href="../assets/css/profile.css">
   <link rel="stylesheet" href="../assets/css/shop-cards.css">
+  <link rel="stylesheet" href="../assets/css/shop.css">
+  <link rel="stylesheet" href="../assets/css/product-modal.css">
   <link rel="stylesheet" href="../assets/css/page-veil.css">
 </head>
 <body>
@@ -119,13 +123,13 @@ $categories = [
         <?php else: ?>
           <div class="products-grid">
             <?php foreach ($products as $product): 
-              $img_src = !empty($product['image_data']) 
-                ? 'data:' . htmlspecialchars($product['mime_type'] ?? 'image/png') . ';base64,' . $product['image_data'] 
-                : '../assets/images/workstation-rig.png';
+              $product_images = $product_images_map[$product['product_id']] ?? [];
+              $image_urls = get_product_image_urls($product_images);
+              $img_src = $image_urls[0];
             ?>
               <div class="product-card">
                 <div class="shop-product-thumb">
-                  <img src="<?= $img_src ?>" alt="<?= htmlspecialchars($product['name']) ?>">
+                  <img src="<?= htmlspecialchars($img_src) ?>" alt="<?= htmlspecialchars($product['name']) ?>">
                 </div>
                 <div class="product-body">
                   <h3><?= htmlspecialchars($product['name']) ?></h3>
@@ -158,7 +162,8 @@ $categories = [
                               data-stock="<?= intval($product['stock']) ?>"
                               data-category="<?= htmlspecialchars($categories[$product['category']] ?? $product['category']) ?>"
                               data-desc="<?= htmlspecialchars($product['description'] ?? 'No detailed description available.') ?>"
-                              data-img="<?= $img_src ?>">
+                              data-img="<?= htmlspecialchars($img_src) ?>"
+                              data-images="<?= htmlspecialchars(json_encode($image_urls)) ?>">
                         View Details
                       </button>
                     </div>
