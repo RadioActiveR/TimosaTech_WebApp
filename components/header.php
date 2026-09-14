@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../helpers/icons.php';
+
 // Determine component view modes based on $current_page
 $is_admin_page     = (isset($current_page) && $current_page === 'admin');
 $is_profile_page   = (isset($current_page) && $current_page === 'profile');
@@ -14,6 +16,7 @@ $is_minimal_header = (isset($current_page) && in_array($current_page, ['order_co
   <link rel="stylesheet" href="../assets/css/master.css">
   <link rel="stylesheet" href="../assets/css/styles.css">
   <link rel="stylesheet" href="../assets/css/profile.css">
+  <link rel="stylesheet" href="../assets/css/chat-widget.css">
 </head>
 <body>
 
@@ -38,14 +41,9 @@ $is_minimal_header = (isset($current_page) && in_array($current_page, ['order_co
         </div>
 
         <!-- NAVIGATION LINKS -->
-        <?php if (!$is_minimal_header): ?>
+        <?php if (!$is_minimal_header && !$is_profile_page): ?>
         <nav class="nav-links">
-          <?php if ($is_profile_page): ?>
-            <!-- Only show Home link when on the Profile page -->
-            <a href="/TimosaTech/pages/homepage.php">Home</a>
-          <?php else: ?>
-            <!-- Full Navigation for Standard Pages -->
-            <?php
+          <?php
             $nav_items = [
                 'home'     => ['label' => 'Home',     'href' => '/TimosaTech/pages/homepage.php'],
                 'shop'     => ['label' => 'Shop',     'href' => '/TimosaTech/pages/shop.php'],
@@ -61,7 +59,6 @@ $is_minimal_header = (isset($current_page) && in_array($current_page, ['order_co
                     <?= htmlspecialchars($item['label']) ?>
                 </a>
             <?php endforeach; ?>
-          <?php endif; ?>
         </nav>
         <?php endif; ?>
       <?php endif; ?>
@@ -88,7 +85,7 @@ $is_minimal_header = (isset($current_page) && in_array($current_page, ['order_co
 
             <!-- Cart Button (Visible on both Standard & Profile Pages) -->
             <button type="button" class="btn btn-outline cart-nav-btn" data-open-cart>
-              Cart <span class="cart-count-badge" style="<?= ($cart_count ?? 0) === 0 ? 'display:none;' : '' ?>"><?= $cart_count ?? 0 ?></span>
+              <?php icon('cart'); ?> Cart <span class="cart-count-badge" style="<?= ($cart_count ?? 0) === 0 ? 'display:none;' : '' ?>"><?= $cart_count ?? 0 ?></span>
             </button>
           <?php endif; ?>
 
@@ -113,3 +110,8 @@ $is_minimal_header = (isset($current_page) && in_array($current_page, ['order_co
 
     </div>
   </header>
+
+  <?php if (!$is_admin_page): ?>
+    <?php require_once __DIR__ . '/../includes/widgets/chat-widget.php'; ?>
+    <script src="../assets/js/chat-widget.js"></script>
+  <?php endif; ?>

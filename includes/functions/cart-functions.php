@@ -7,6 +7,15 @@
 
 require_once __DIR__ . '/product-image-functions.php';
 
+// Single source of truth for the flat shipping fee, used by both
+// pages/checkout.php (what the customer sees) and order-functions.php's
+// create_order() (what actually gets saved) — keeping these as one
+// function instead of two separate hardcoded numbers is what prevents
+// them drifting apart again.
+function get_shipping_fee(): float {
+    return 100.00;
+}
+
 // Returns every cart row for a user, joined to its product, with a
 // resolved `image_url` for the product's primary photo attached to each
 // row (see attach_cart_image_urls() below).

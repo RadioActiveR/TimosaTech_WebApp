@@ -9,12 +9,11 @@
  * on success we only delete those specific cart_item_id rows — anything the
  * user left unchecked stays in their cart untouched.
  */
-function create_order(PDO $pdo, string $u_id, array $details, array $cart_items): ?string {
+function create_order(PDO $pdo, string $u_id, array $details, array $cart_items, float $shipping_fee = 0.00): ?string {
     $subtotal = 0;
     foreach ($cart_items as $item) {
         $subtotal += $item['price'] * $item['quantity'];
     }
-    $shipping_fee = 0.00; // flat/free for now — adjust here if you add shipping tiers later
     $total = $subtotal + $shipping_fee;
 
     $order_id = uniqid('ord_', true);

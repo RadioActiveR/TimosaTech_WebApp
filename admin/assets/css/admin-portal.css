@@ -461,7 +461,130 @@
 .stock-badge-critical { background: rgba(248, 113, 113, 0.12); color: #f87171; }
 
 /* =========================================
-   8. Media Queries
+   8. Customer Support Chat (Messenger-style)
+   ========================================= */
+.support-chat-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+  height: 560px;
+}
+
+.support-contacts-list {
+  border: 1px solid #1a2f4c;
+  border-radius: 8px;
+  overflow-y: auto;
+  background: #0d192b;
+}
+
+.support-contact-row {
+  display: block;
+  padding: 12px 14px;
+  border-bottom: 1px solid #1a2f4c;
+  border-left: 3px solid transparent;
+  text-decoration: none;
+  color: inherit;
+}
+.support-contact-row:hover { background: rgba(255, 255, 255, 0.03); }
+.support-contact-row.active {
+  background: rgba(10, 221, 238, 0.08);
+  border-left-color: var(--accent-cyan);
+}
+
+.support-contact-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.support-contact-name { font-weight: 600; color: #fff; font-size: 0.88rem; }
+
+.support-contact-preview {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.support-status-bot           { background: rgba(79, 143, 247, 0.12); color: #4f8ff7; }
+.support-status-pending_human { background: rgba(250, 204, 21, 0.12); color: #facc15; }
+.support-status-active_human  { background: rgba(74, 222, 128, 0.12); color: #4ade80; }
+.support-status-closed        { background: rgba(122, 139, 163, 0.12); color: #7a8ba3; }
+
+.support-chat-panel {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #1a2f4c;
+  border-radius: 8px;
+  background: #0d192b;
+  overflow: hidden;
+}
+
+.support-chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #1a2f4c;
+}
+
+.support-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.support-msg {
+  max-width: 75%;
+  padding: 9px 13px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: #cbd5e1;
+}
+.support-msg-visitor { align-self: flex-start; background: #16283f; }
+.support-msg-bot     { align-self: flex-start; background: #16283f; border: 1px dashed #1a2f4c; }
+.support-msg-admin   { align-self: flex-end; background: var(--accent-cyan); color: #06121c; }
+
+.support-reply-form {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid #1a2f4c;
+}
+.support-reply-form textarea {
+  flex: 1;
+  background: var(--bg1);
+  border: 1px solid var(--bg-card-border);
+  color: var(--text-primary);
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+  resize: none;
+}
+.support-reply-form button {
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.support-reply-form button svg { width: 18px; height: 18px; }
+
+@media (max-width: 860px) {
+  .support-chat-layout { grid-template-columns: 1fr; height: auto; }
+  .support-contacts-list { max-height: 240px; }
+}
+
+/* =========================================
+   9. Media Queries
    ========================================= */
 @media (max-width: 860px) {
   .order-detail-grid { 

@@ -1,0 +1,18 @@
+.center-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 30vh;
+    text-align: center;
+}
+
+.hidden {
+    margin: 0;
+}
+
+.hidden-subtext {
+    margin: 10px 0 0 0;
+    font-size: 1rem;
+    font-weight: normal; 
+}

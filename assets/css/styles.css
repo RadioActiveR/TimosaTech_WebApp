@@ -1252,7 +1252,13 @@ section { padding: 90px 0; }
   border-radius: var(--radius-lg);
   padding: 24px;
   position: sticky;
-  top: 20px;
+  /* .navbar is itself position:sticky at top:0 with a 76px-tall
+     container (see .navbar .container above) and a higher z-index, so a
+     plain `top: 20px` here would stick this card 20px from the viewport
+     top — underneath/behind the navbar rather than below it, clipping
+     this card's own heading. Offsetting by the navbar's height + a small
+     gap keeps this card fully visible just below it instead. */
+  top: 96px;
 }
 .checkout-summary h3 { margin-top: 0; font-size: 1.05rem; }
 .checkout-summary-items {
@@ -1366,4 +1372,33 @@ section { padding: 90px 0; }
 
 .copy-order-id-btn.copied .check-icon {
   display: inline-flex;
+}
+/* ==========================================================================
+   GENERIC "BACK" BUTTON (shared)
+   Bordered pill with a hover state, used wherever a page needs a scoped
+   back/cancel action in its content rather than in the navbar (e.g.
+   pages/profile.php). Visually matches .checkout-back-btn (checkout.css)
+   but lives here since it's meant to be reused beyond just checkout.
+   ========================================================================== */
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease,
+              background-color 0.15s ease, transform 0.15s ease;
+}
+
+.back-btn:hover {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  background: rgba(10, 221, 238, 0.08);
+  transform: translateY(-1px);
 }

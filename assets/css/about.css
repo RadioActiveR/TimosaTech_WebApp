@@ -10,7 +10,7 @@
 .about-hero {
   position: relative;
   overflow: hidden;
-  padding: 100px 0 0;
+  padding: 100px 0 90px;
 }
 
 .about-hero::before {
@@ -34,7 +34,6 @@
   grid-template-columns: 1.1fr 0.9fr;
   gap: 60px;
   align-items: center;
-  padding-bottom: 70px;
 }
 
 .about-hero-text h1 {
@@ -53,6 +52,7 @@
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
+  margin-top: 8px;
 }
 
 /* Bench status panel */
@@ -353,7 +353,7 @@
 
 /* ---- Responsive ---- */
 @media (max-width: 900px) {
-  .about-hero-grid { grid-template-columns: 1fr; gap: 40px; padding-bottom: 50px; }
+  .about-hero-grid { grid-template-columns: 1fr; gap: 40px; }
   .about-story-grid { grid-template-columns: 1fr; gap: 44px; }
   .about-process-row { grid-template-columns: repeat(2, 1fr); row-gap: 40px; }
   .about-process-row::before { display: none; }

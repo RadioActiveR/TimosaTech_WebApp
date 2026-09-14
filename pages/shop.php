@@ -73,7 +73,7 @@ $categories = [
   <link rel="stylesheet" href="../assets/css/shop-cards.css">
   <link rel="stylesheet" href="../assets/css/shop.css">
   <link rel="stylesheet" href="../assets/css/product-modal.css">
-  <link rel="stylesheet" href="../assets/css/page-veil.css">
+  <link rel="stylesheet" href="../assets/css/content-veil.css">
 </head>
 <body>
 
@@ -84,7 +84,10 @@ $categories = [
 
   <main class="container shop-main">
   <?php if ($page_hidden): ?>
-    <h1 class="hidden"> HIDDEN </h1>
+    <div class="center-container">
+      <h1 class="hidden"> HIDDEN </h1>
+      <h2 class="hidden-subtext"> Protocol 'CONTENT VEIL' active. Public routing disabled by Administrator. </h2>
+    </div>
   <?php else: ?>
     <div class="shop-header">
       <div>
@@ -146,14 +149,7 @@ $categories = [
                               data-id="<?= $product['product_id'] ?>"
                               aria-label="Quick add <?= htmlspecialchars($product['name']) ?> to cart"
                               title="Add to cart">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <g transform="translate(-1,2) scale(0.72)">
-                            <circle cx="9" cy="21" r="1"></circle>
-                            <circle cx="20" cy="21" r="1"></circle>
-                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                          </g>
-                          <path d="M18 2v6M15 5h6"></path>
-                        </svg>
+                        <?php icon('cart-add'); ?>
                       </button>
                       <button class="btn btn-outline view-details-btn" 
                               data-id="<?= $product['product_id'] ?>"

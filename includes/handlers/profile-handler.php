@@ -15,12 +15,12 @@ require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../functions/user-profile-functions.php';
 
 if (!isset($_SESSION['u_id'])) {
-    header("Location: ../pages/homepage.php");
+    header("Location: ../../pages/homepage.php");
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header("Location: ../pages/profile.php");
+    header("Location: ../../pages/profile.php");
     exit;
 }
 
@@ -51,5 +51,5 @@ if ($success) {
     $_SESSION['profile_error'] = 'Failed to update profile. Please try again.';
 }
 
-header("Location: ../pages/profile.php");
+header("Location: ../../pages/profile.php");
 exit;

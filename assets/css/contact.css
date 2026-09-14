@@ -1,0 +1,100 @@
+/* ==========================================================================
+   CONTACT PAGE — unique sections
+   Uses tokens already defined in variables.css / styles.css.
+   ========================================================================== */
+
+.contact-hero {
+  padding: 90px 0 50px;
+  text-align: center;
+}
+.contact-hero .container { max-width: 680px; }
+.contact-hero h1 { font-size: 2.2rem; margin: 14px 0 16px; }
+.contact-hero p { color: var(--text-muted); }
+
+.contact-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 50px;
+  padding: 0 0 90px;
+  align-items: start;
+}
+
+/* ---- Form ---- */
+.contact-form-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+}
+.contact-form-card h2 { font-size: 1.3rem; margin-bottom: 20px; }
+
+.contact-form .form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ---- Info column ---- */
+.contact-info-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin-bottom: 20px;
+}
+.contact-info-card h3 { font-size: 1.05rem; margin-bottom: 18px; }
+
+.contact-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--bg-card-border);
+}
+.contact-info-row:first-of-type { border-top: none; padding-top: 0; }
+
+.contact-info-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(63, 217, 240, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.contact-info-icon svg { width: 17px; height: 17px; stroke: var(--accent-cyan); }
+
+.contact-info-row h4 { font-size: 0.88rem; margin-bottom: 3px; }
+.contact-info-row p, .contact-info-row a {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.contact-info-row a:hover { color: var(--accent-cyan); }
+
+.contact-hours-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 8px 0;
+  border-top: 1px solid var(--bg-card-border);
+}
+.contact-hours-row:first-of-type { border-top: none; padding-top: 0; }
+.contact-hours-row span:first-child { color: var(--text-primary); }
+.contact-hours-row span:last-child { color: var(--text-muted); }
+
+.contact-map {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--bg-card-border);
+}
+.contact-map iframe { width: 100%; height: 220px; border: 0; display: block; }
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+  .contact-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .contact-form .form-grid-2 { grid-template-columns: 1fr; }
+}

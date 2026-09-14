@@ -26,7 +26,7 @@
   <title><?= htmlspecialchars($page_title) ?></title>
   <link rel="icon" type="image/png" href="../assets/images/TimosaTechLogo.png">
   <link rel="stylesheet" href="../assets/css/variables.css">
-  <link rel="stylesheet" href="../assets/css/page-veil.css">
+  <link rel="stylesheet" href="../assets/css/content-veil.css">
   <link rel="stylesheet" href="../assets/css/styles.css">
   <link rel="stylesheet" href="../assets/css/cart-modal.css">
   <link rel="stylesheet" href="../assets/css/profile.css">
@@ -43,7 +43,10 @@
     <main>
 
     <?php if ($page_hidden): ?>
-      <h1 class="hidden"> HIDDEN </h1>
+      <div class="center-container">
+        <h1 class="hidden"> HIDDEN </h1>
+        <h2 class="hidden-subtext"> Protocol 'CONTENT VEIL' active. Public routing disabled by Administrator. </h2>
+      </div>
     <?php else: ?>
 
       <!-- HERO -->

@@ -32,19 +32,20 @@
   margin-top: 18px;
 }
 
-/* Wraps the back button + summary card so the button sits above it,
-   stacked in the same right-hand column. */
-.checkout-summary-col {
+/* Matches .shop-header's pattern (styles.css): title block and the back
+   button share one row, vertically centered together. */
+.checkout-header-row {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 .checkout-back-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  align-self: flex-start;
-  margin-bottom: 12px;
   padding: 8px 14px;
   border: 1px solid var(--bg-card-border);
   border-radius: var(--radius-md);

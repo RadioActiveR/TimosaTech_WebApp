@@ -40,7 +40,10 @@ if (!$modal_hidden && isset($_SESSION['u_id'])) {
     </div>
 
     <?php if ($modal_hidden): ?>
-    <h2 class="hidden">HIDDEN</h2>
+      <div class="center-container">
+        <h2 class="hidden"> HIDDEN </h2>
+        <h3 class="hidden-subtext"> Protocol 'CONTENT VEIL' active. Public routing disabled by Administrator. </h3>
+      </div>
     <?php else: ?>
 
     <form method="post" action="checkout.php" id="cartCheckoutForm">

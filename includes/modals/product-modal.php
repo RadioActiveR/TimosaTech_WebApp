@@ -6,7 +6,10 @@ $modal_hidden = isset($pdo) && function_exists('is_modal_hidden') && is_modal_hi
     <div class="product-modal<?= $modal_hidden ? ' product-modal-veiled' : '' ?>">
       <button class="modal-close" id="closeModal">&times;</button>
       <?php if ($modal_hidden): ?>
-      <h2 class="hidden">HIDDEN</h2>
+      <div class="center-container">
+        <h2 class="hidden"> HIDDEN </h2>
+        <h3 class="hidden-subtext"> Protocol 'CONTENT VEIL' active. Public routing disabled by Administrator. </h3>
+      </div>
       <?php else: ?>
       <div class="modal-image-container" id="modalImageContainer">
         <div class="modal-image-track" id="modalImageTrack"></div>

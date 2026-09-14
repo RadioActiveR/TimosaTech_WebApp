@@ -19,17 +19,17 @@ function get_controllable_pages(): array {
         'services'           => 'Services',
         'about'              => 'About',
         'contact'            => 'Contact',
-        'checkout'           => 'Checkout',
         'profile'            => 'Profile',
+        'checkout'           => 'Checkout',
         'order_confirmation' => 'Order Confirmation',
     ];
 }
 
 function get_controllable_modals(): array {
     return [
+        'modal_auth'    => 'Login/Signup Modal',
         'modal_product' => 'Product Modal',
         'modal_cart'    => 'Cart Modal',
-        'modal_auth'    => 'Login Signup Modal',
     ];
 }
 

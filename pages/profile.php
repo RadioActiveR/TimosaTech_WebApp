@@ -28,6 +28,8 @@ $u_id = $_SESSION['u_id'];
 $page_hidden = is_page_hidden($pdo, 'profile');
 $success_msg = '';
 $error_msg = '';
+$username_success_msg = '';
+$username_error_msg = '';
 
 $page_title = "Timosa Tech - Profile";
 $current_page = 'profile';
@@ -51,6 +53,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_username') {
+    $result = update_username($pdo, $u_id, $_POST['new_username'] ?? '');
+    if ($result['success']) {
+        $_SESSION['username'] = trim($_POST['new_username']);
+        $user_name = $_SESSION['username'];
+        $username_success_msg = "Username updated successfully!";
+    } else {
+        $username_error_msg = $result['error'];
+    }
+}
+
 // Fetch current user data
 $profile = get_user_profile($pdo, $u_id);
 $orders = get_user_orders($pdo, $u_id);
@@ -69,7 +82,7 @@ $orders = get_user_orders($pdo, $u_id);
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/page-veil.css">
+  <link rel="stylesheet" href="../assets/css/content-veil.css">
 </head>
 <body>
 
@@ -81,13 +94,21 @@ $orders = get_user_orders($pdo, $u_id);
   <!-- MAIN CONTENT -->
   <main class="profile-main">
   <?php if ($page_hidden): ?>
-    <h1 class="hidden"> HIDDEN </h1>
+    <div class="center-container">
+      <h1 class="hidden"> HIDDEN </h1>
+      <h2 class="hidden-subtext"> Protocol 'CONTENT VEIL' active. Public routing disabled by Administrator. </h2>
+    </div>
   <?php else: ?>
     <div class="container">
       
       <div class="profile-header-banner">
-        <span class="section-tag">ACCOUNT CONTROL PANEL</span>
-        <h1>User <span class="highlight">Profile</span></h1>
+        <div class="profile-header-row">
+          <div>
+            <span class="section-tag">ACCOUNT CONTROL PANEL</span>
+            <h1>User <span class="highlight">Profile</span></h1>
+          </div>
+          <button type="button" class="back-btn" id="profileBackBtn">&larr; Back</button>
+        </div>
         <p class="profile-subtitle">Manage your personal information, address details, and track your recent orders.</p>
       </div>
 
@@ -179,6 +200,33 @@ $orders = get_user_orders($pdo, $u_id);
             </form>
           </section>
 
+          <!-- USERNAME -->
+          <section class="profile-section-card">
+            <h2>Change Username</h2>
+
+            <?php if ($username_success_msg): ?>
+              <div class="alert alert-success"><?= htmlspecialchars($username_success_msg) ?></div>
+            <?php endif; ?>
+
+            <?php if ($username_error_msg): ?>
+              <div class="alert alert-danger"><?= htmlspecialchars($username_error_msg) ?></div>
+            <?php endif; ?>
+
+            <form action="profile.php" method="POST" class="profile-form">
+              <input type="hidden" name="action" value="update_username">
+
+              <div class="form-group">
+                <label for="new_username">Username</label>
+                <input type="text" id="new_username" name="new_username" class="form-control"
+                       value="<?= htmlspecialchars($profile['username']) ?>"
+                       required minlength="3" maxlength="30" pattern="[A-Za-z0-9_]+"
+                       title="Letters, numbers, and underscores only">
+              </div>
+
+              <button type="submit" class="btn btn-outline">Update Username</button>
+            </form>
+          </section>
+
           <!-- ORDER HISTORY -->
           <section class="profile-section-card">
             <h2>Order History</h2>
@@ -253,6 +301,15 @@ $orders = get_user_orders($pdo, $u_id);
   ?>
 
   <script>window.isLoggedIn = <?= $is_logged_in ? 'true' : 'false' ?>;</script>
+  <script>
+    document.getElementById('profileBackBtn')?.addEventListener('click', function () {
+      if (document.referrer && document.referrer.indexOf(window.location.origin) === 0 && window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = 'homepage.php';
+      }
+    });
+  </script>
   <?php include __DIR__ . '/../includes/modals/cart-modal.php'; ?>
   <script src="../assets/js/cart.js"></script>
   <script src="../assets/js/copy-order-id.js"></script>

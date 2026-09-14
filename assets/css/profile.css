@@ -31,6 +31,17 @@
   margin-bottom: 36px;
 }
 
+/* Matches .shop-header's pattern (styles.css): title block and the back
+   button share one row, vertically centered together, with the subtitle
+   sitting below the row rather than inside it. */
+.profile-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
 .profile-header-banner h1 {
   font-size: 2.2rem;
   margin-top: 4px;

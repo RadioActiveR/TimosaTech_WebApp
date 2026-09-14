@@ -20,12 +20,12 @@ require __DIR__ . '/../functions/cart-functions.php';
 require __DIR__ . '/../functions/order-functions.php';
 
 if (!isset($_SESSION['u_id'])) {
-    header("Location: ../pages/homepage.php");
+    header("Location: ../../pages/homepage.php");
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header("Location: ../pages/checkout.php");
+    header("Location: ../../pages/checkout.php");
     exit;
 }
 
@@ -43,7 +43,7 @@ function redirect_to_checkout(string $error): void {
         'postal_code'    => trim($_POST['postal_code'] ?? ''),
         'payment_method' => trim($_POST['payment_method'] ?? ''),
     ];
-    header("Location: ../pages/checkout.php");
+    header("Location: ../../pages/checkout.php");
     exit;
 }
 
@@ -71,7 +71,7 @@ if (!in_array($payment_method, $valid_payment_methods, true)) {
 // specifically selected — see get_checkout_cart_items()).
 $cart_items = get_checkout_cart_items($pdo, $u_id);
 if (empty($cart_items)) {
-    header("Location: ../pages/shop.php");
+    header("Location: ../../pages/shop.php");
     exit;
 }
 
@@ -90,7 +90,7 @@ $order_id = create_order($pdo, $u_id, [
     'province'       => $province,
     'postal_code'    => $postal_code,
     'payment_method' => $payment_method,
-], $cart_items);
+], $cart_items, get_shipping_fee());
 
 if (!$order_id) {
     redirect_to_checkout('Something went wrong placing your order. Please try again.');
@@ -101,4 +101,4 @@ if (!$order_id) {
 unset($_SESSION['checkout_selected_items']);
 
 header("Location: ../../pages/order-confirmation.php?order_id=" . urlencode($order_id));
-exit;   
+exit;

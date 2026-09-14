@@ -53,7 +53,7 @@ foreach ($checkout_items as $item) {
     $subtotal += $item['price'] * $item['quantity'];
 }
 
-$shipping_fee = 100.00; // Flat-rate shipping fee
+$shipping_fee = get_shipping_fee();
 $grand_total  = $subtotal + $shipping_fee;
 
 // Fetch user profile data to auto-fill shipping fields
@@ -84,7 +84,7 @@ $is_logged_in = true; // this page already requires a session, see the redirect 
   <link rel="icon" type="image/png" href="../assets/images/TimosaTechLogo.png">
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/styles.css">
-  <link rel="stylesheet" href="../assets/css/page-veil.css">
+  <link rel="stylesheet" href="../assets/css/content-veil.css">
   <link rel="stylesheet" href="../assets/css/checkout.css">
 </head>
 <body>
@@ -96,13 +96,21 @@ $is_logged_in = true; // this page already requires a session, see the redirect 
 
   <main class="checkout-main">
   <?php if ($page_hidden): ?>
-    <h1 class="hidden"> HIDDEN </h1>
+    <div class="center-container">
+      <h1 class="hidden"> HIDDEN </h1>
+      <h2 class="hidden-subtext"> Protocol 'CONTENT VEIL' active. Public routing disabled by Administrator. </h2>
+    </div>
   <?php else: ?>
     <div class="container">
 
       <div class="checkout-header">
-        <span class="section-tag">SECURE CHECKOUT</span>
-        <h1>Checkout</h1>
+        <div class="checkout-header-row">
+          <div>
+            <span class="section-tag">SECURE CHECKOUT</span>
+            <h1>Checkout</h1>
+          </div>
+          <a href="shop.php" class="checkout-back-btn">&larr; Back to Shop</a>
+        </div>
       </div>
 
       <?php if ($checkout_error): ?>
@@ -182,10 +190,7 @@ $is_logged_in = true; // this page already requires a session, see the redirect 
         </div>
 
         <!-- Right Column: Order Summary -->
-        <div class="checkout-summary-col">
-          <a href="shop.php" class="checkout-back-btn">&larr; Back to Shop</a>
-
-          <aside class="checkout-summary">
+        <aside class="checkout-summary">
           <h3>Order Summary</h3>
 
           <div class="checkout-summary-items">
@@ -213,8 +218,7 @@ $is_logged_in = true; // this page already requires a session, see the redirect 
           <?php endforeach; ?>
 
           <button type="submit" class="btn btn-primary checkout-summary-submit">Place Order</button>
-          </aside>
-        </div>
+        </aside>
 
       </form>
     </div>

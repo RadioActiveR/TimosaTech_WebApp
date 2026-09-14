@@ -46,6 +46,36 @@ function update_user_profile(PDO $pdo, string $u_id, array $data): bool {
     ]);
 }
 
+// Changes a user's username after validating format and uniqueness.
+// Returns ['success' => bool, 'error' => string] so the caller can show
+// a specific message rather than a generic failure.
+function update_username(PDO $pdo, string $u_id, string $new_username): array {
+    $new_username = trim($new_username);
+
+    if ($new_username === '') {
+        return ['success' => false, 'error' => 'Username cannot be empty.'];
+    }
+    if (strlen($new_username) < 3 || strlen($new_username) > 30) {
+        return ['success' => false, 'error' => 'Username must be between 3 and 30 characters.'];
+    }
+    if (!preg_match('/^[A-Za-z0-9_]+$/', $new_username)) {
+        return ['success' => false, 'error' => 'Username can only contain letters, numbers, and underscores.'];
+    }
+
+    // Uniqueness check excludes the user's own current row so re-submitting
+    // the same username isn't rejected as "taken".
+    $stmt = $pdo->prepare("SELECT u_id FROM users WHERE username = ? AND u_id != ?");
+    $stmt->execute([$new_username, $u_id]);
+    if ($stmt->fetch()) {
+        return ['success' => false, 'error' => 'That username is already taken.'];
+    }
+
+    $stmt = $pdo->prepare("UPDATE users SET username = ? WHERE u_id = ?");
+    $success = $stmt->execute([$new_username, $u_id]);
+
+    return ['success' => $success, 'error' => $success ? '' : 'Failed to update username. Please try again.'];
+}
+
 // Retrieves all past orders placed by the user, newest first
 function get_user_orders(PDO $pdo, string $u_id): array {
     $stmt = $pdo->prepare("

@@ -16,7 +16,10 @@ $is_open    = isset($auth_tab);
     <button type="button" class="auth-close" id="authClose" aria-label="Close">&times;</button>
 
     <?php if ($modal_hidden): ?>
-    <h2 id="authModalTitle" class="hidden">HIDDEN</h2>
+      <div class="center-container">
+        <h2 id="authModalTitle" class="hidden"> HIDDEN </h2>
+        <h3 class="hidden-subtext"> Protocol 'CONTENT VEIL' active. Public routing disabled by Administrator. </h3>
+      </div>
     <?php else: ?>
 
     <div class="auth-tabs">

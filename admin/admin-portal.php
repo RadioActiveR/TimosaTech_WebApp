@@ -15,6 +15,8 @@ require_once __DIR__ . '/../admin/includes/functions/product-admin-functions.php
 require_once __DIR__ . '/../admin/includes/functions/order-admin-functions.php';
 require_once __DIR__ . '/../admin/includes/functions/activity-log-admin-functions.php';
 require_once __DIR__ . '/../includes/functions/site-control-functions.php';
+require_once __DIR__ . '/../includes/functions/chat-functions.php';
+require_once __DIR__ . '/../helpers/icons.php';
 
 // Access Control Protection
 if (!isset($_SESSION['u_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
@@ -215,6 +217,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         } else {
             $error = "Could not delete that order.";
         }
+
+    } elseif ($_POST['action'] === 'send_admin_reply') {
+        $conversation_id = intval($_POST['conversation_id'] ?? 0);
+        $reply_message   = trim($_POST['message'] ?? '');
+
+        if ($conversation_id > 0 && $reply_message !== '') {
+            assign_conversation($pdo, $conversation_id, $_SESSION['u_id']);
+            add_chat_message($pdo, $conversation_id, 'admin', $_SESSION['u_id'], $reply_message);
+        } else {
+            $error = "Reply message can't be empty.";
+        }
     }
 }
 
@@ -303,6 +316,22 @@ if ($active_tab === 'overview') {
     $total_products = $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
     $total_orders = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
     $total_revenue = $pdo->query("SELECT SUM(total_amount) FROM orders WHERE status != 'cancelled'")->fetchColumn() ?: 0;
+}
+
+// Fetch data for the Customer Support Chat tab
+$all_conversations        = [];
+$selected_conversation_id = 0;
+$selected_conversation    = null;
+$selected_messages        = [];
+if ($active_tab === 'support') {
+    $all_conversations        = get_all_conversations_for_admin($pdo);
+    $selected_conversation_id = intval($_GET['conversation_id'] ?? 0);
+    if ($selected_conversation_id > 0) {
+        $selected_conversation = get_conversation($pdo, $selected_conversation_id);
+        if ($selected_conversation) {
+            $selected_messages = get_conversation_messages($pdo, $selected_conversation_id);
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -567,7 +596,7 @@ if ($active_tab === 'overview') {
                 <h3>Payment</h3>
                 <p><?= htmlspecialchars(ucwords(str_replace('_', ' ', $view_order['payment_method']))) ?></p>
                 <p style="margin-top: 10px;">Subtotal: $<?= number_format($view_order['subtotal'], 2) ?></p>
-                <p>Shipping: <?= $view_order['shipping_fee'] > 0 ? '$' . number_format($view_order['shipping_fee'], 2) : 'Free' ?></p>
+                <p>Shipping: <?= $view_order['shipping_fee'] > 0 ? '₱' . number_format($view_order['shipping_fee'], 2) : 'Free' ?></p>
                 <p style="color: #0adde0; font-weight: 700;">Total: $<?= number_format($view_order['total_amount'], 2) ?></p>
               </div>
 
@@ -722,7 +751,6 @@ if ($active_tab === 'overview') {
           <h2>Blackout Switch</h2>
           <p class="site-controls-intro">
             Initiates Protocol "CONTENT VEIL" for Development Hiccups.
-            </br> "HI DEN" placeholder in place of Page/Modal Content.
           </p>
 
           <?php if ($message): ?><p style="color: #0ADDEE; margin-bottom: 15px;"><?= htmlspecialchars($message) ?></p><?php endif; ?>
@@ -890,6 +918,65 @@ if ($active_tab === 'overview') {
           <?php endif; ?>
         </section>
 
+      <?php elseif ($active_tab === 'support'): ?>
+        <section class="admin-panel">
+          <h2>Customer Support Chat</h2>
+          <?php if ($message): ?><p style="color: #0ADDEE; margin-bottom: 15px;"><?= htmlspecialchars($message) ?></p><?php endif; ?>
+          <?php if ($error): ?><p style="color: #f87171; margin-bottom: 15px;"><?= htmlspecialchars($error) ?></p><?php endif; ?>
+
+          <div class="support-chat-layout">
+            <aside class="support-contacts-list">
+              <?php if (empty($all_conversations)): ?>
+                <p class="admin-panel-placeholder">No conversations yet.</p>
+              <?php else: ?>
+                <?php foreach ($all_conversations as $conv): ?>
+                  <a href="?tab=support&conversation_id=<?= $conv['conversation_id'] ?>"
+                     class="support-contact-row <?= $selected_conversation_id === (int) $conv['conversation_id'] ? 'active' : '' ?>">
+                    <div class="support-contact-top">
+                      <span class="support-contact-name"><?= htmlspecialchars(conversation_display_name($conv)) ?></span>
+                      <span class="status-badge support-status-<?= htmlspecialchars($conv['status']) ?>">
+                        <?= htmlspecialchars(chat_status_label($conv['status'])) ?>
+                      </span>
+                    </div>
+                    <p class="support-contact-preview"><?= htmlspecialchars(mb_strimwidth($conv['last_message'] ?? '', 0, 60, '...')) ?></p>
+                  </a>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </aside>
+
+            <div class="support-chat-panel">
+              <?php if (!$selected_conversation): ?>
+                <p class="admin-panel-placeholder">Select a conversation to view it.</p>
+              <?php else: ?>
+                <div class="support-chat-header">
+                  <strong><?= htmlspecialchars(conversation_display_name($selected_conversation)) ?></strong>
+                  <span class="status-badge support-status-<?= htmlspecialchars($selected_conversation['status']) ?>">
+                    <?= htmlspecialchars(chat_status_label($selected_conversation['status'])) ?>
+                  </span>
+                </div>
+
+                <div class="support-chat-messages"
+                     id="supportChatMessages"
+                     data-conversation-id="<?= $selected_conversation['conversation_id'] ?>"
+                     data-last-id="<?= $selected_messages ? end($selected_messages)['message_id'] : 0 ?>">
+                  <?php foreach ($selected_messages as $msg): ?>
+                    <div class="support-msg support-msg-<?= htmlspecialchars($msg['sender_type']) ?>" data-message-id="<?= $msg['message_id'] ?>">
+                      <?= nl2br(htmlspecialchars($msg['message'])) ?>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+
+                <form method="post" class="support-reply-form">
+                  <input type="hidden" name="action" value="send_admin_reply">
+                  <input type="hidden" name="conversation_id" value="<?= $selected_conversation['conversation_id'] ?>">
+                  <textarea name="message" rows="2" placeholder="Type a reply..." required></textarea>
+                  <button type="submit" class="btn btn-primary"><?php icon('send'); ?></button>
+                </form>
+              <?php endif; ?>
+            </div>
+          </div>
+        </section>
+
       <?php else: ?>
         <section class="admin-panel">
           <h2><?= htmlspecialchars($admin_tabs[$active_tab]) ?></h2>
@@ -898,5 +985,6 @@ if ($active_tab === 'overview') {
       <?php endif; ?>
     </main>
   </div>
+  <script src="assets/js/admin-chat.js"></script>
 </body>
 </html>

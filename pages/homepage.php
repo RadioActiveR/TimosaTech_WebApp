@@ -126,7 +126,7 @@ $product_images_map = get_product_images_for_ids($pdo, array_column($products, '
   <link rel="stylesheet" href="../assets/css/cart-modal.css">
   <link rel="stylesheet" href="../assets/css/profile.css">
   <link rel="stylesheet" href="../assets/css/product-modal.css">
-  <link rel="stylesheet" href="../assets/css/page-veil.css">
+  <link rel="stylesheet" href="../assets/css/content-veil.css">
 </head>
 
 <body>
@@ -138,7 +138,10 @@ $product_images_map = get_product_images_for_ids($pdo, array_column($products, '
 
   <main>
   <?php if ($page_hidden): ?>
-    <h1 class="hidden"> HIDDEN </h1>
+    <div class="center-container">
+      <h1 class="hidden"> HIDDEN </h1>
+      <h2 class="hidden-subtext"> Protocol 'CONTENT VEIL' active. Public routing disabled by Administrator. </h2>
+    </div>
   <?php else: ?>
     <!-- HERO SECTION -->
     <section class="hero">
