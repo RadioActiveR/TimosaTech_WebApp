@@ -13,14 +13,30 @@ document.addEventListener("DOMContentLoaded", function () {
   const tabs      = document.querySelectorAll(".auth-tab");
   const forms     = document.querySelectorAll(".auth-form");
   const switchBtns = document.querySelectorAll(".auth-switch [data-target]");
+  const redirectInputs = document.querySelectorAll(".auth-redirect-to");
 
   if (!overlay) return;
 
-  function openModal(target) {
+  // Where to send the user after a successful login/signup. Defaults to
+  // wherever they currently are (so the header's Log In button just
+  // brings them back to the page they were on); callers that need a
+  // specific destination — e.g. the add-to-cart guest prompt, which
+  // should always land on the shop page — pass redirectTo explicitly.
+  function setRedirectTarget(redirectTo) {
+    const target = redirectTo || (window.location.pathname + window.location.search);
+    redirectInputs.forEach(input => { input.value = target; });
+  }
+
+  function openModal(target, redirectTo) {
+    setRedirectTarget(redirectTo);
     overlay.classList.add("active");
     document.body.style.overflow = "hidden";
     if (target) showTab(target);
   }
+
+  // Exposed so other scripts (cart.js) can open this modal with a
+  // specific post-login destination instead of clicking a real button.
+  window.openAuthModal = openModal;
 
   function closeModal() {
     overlay.classList.remove("active");
@@ -35,7 +51,7 @@ document.addEventListener("DOMContentLoaded", function () {
   openBtns.forEach(btn => {
     btn.addEventListener("click", function (e) {
       e.preventDefault();
-      openModal(btn.dataset.openAuth || "login");
+      openModal(btn.dataset.openAuth || "login", btn.dataset.redirectTo);
     });
   });
 

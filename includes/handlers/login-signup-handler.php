@@ -12,6 +12,17 @@
 session_start();
 require __DIR__ . '/../../config/db.php';
 
+// Only allow same-site, absolute-path redirects (e.g.
+// "/TimosaTech/pages/shop.php"). Never a full URL or a protocol-relative
+// one ("//evil.com") — redirect_to comes from a hidden form field that a
+// visitor's browser controls, so it can't be trusted blindly.
+function is_safe_redirect(string $path): bool {
+    return $path !== ''
+        && str_starts_with($path, '/TimosaTech/')
+        && !str_contains($path, '://')
+        && !str_starts_with($path, '//');
+}
+
 function redirect_back(string $tab, ?string $error = null): void {
     if ($error !== null) {
         $_SESSION['auth_error'] = $error;
@@ -20,9 +31,10 @@ function redirect_back(string $tab, ?string $error = null): void {
     
     // Preserve old inputs (excluding sensitive password fields)
     $_SESSION['auth_old_input'] = [
-        'username' => trim($_POST['username'] ?? ''),
-        'email'    => trim($_POST['email'] ?? ''),
-        'identity' => trim($_POST['identity'] ?? '')
+        'username'    => trim($_POST['username'] ?? ''),
+        'email'       => trim($_POST['email'] ?? ''),
+        'identity'    => trim($_POST['identity'] ?? ''),
+        'redirect_to' => trim($_POST['redirect_to'] ?? '')
     ];
 
     header("Location: ../../pages/homepage.php");
@@ -30,6 +42,11 @@ function redirect_back(string $tab, ?string $error = null): void {
 }
 
 $action = $_POST['action'] ?? '';
+
+// Where to send the user after a successful login/signup. Falls back to
+// the homepage if nothing valid was submitted (e.g. JS disabled).
+$redirect_to_input = trim($_POST['redirect_to'] ?? '');
+$safe_redirect = is_safe_redirect($redirect_to_input) ? $redirect_to_input : '/TimosaTech/pages/homepage.php';
 
 /* ---------------- Sign Up ---------------- */
 if ($action === 'signup') {
@@ -87,7 +104,7 @@ if ($action === 'signup') {
     $_SESSION['username']  = $username;
     $_SESSION['user_role'] = 'user';
 
-    header("Location: ../../pages/homepage.php");
+    header("Location: " . $safe_redirect);
     exit;
 }
 
@@ -113,11 +130,12 @@ if ($action === 'login') {
     $_SESSION['username']  = $user['username'];
     $_SESSION['user_role'] = $user['role'];
 
-    // Redirect based on role
+    // Admins always land in the dashboard, regardless of where the login
+    // modal was opened from — redirect_to only applies to regular users.
     if ($user['role'] === 'admin') {
         header("Location: /TimosaTech/admin/admin-portal.php");
     } else {
-        header("Location: ../../pages/homepage.php");
+        header("Location: " . $safe_redirect);
     }
     exit;
 }

@@ -119,6 +119,15 @@ function assign_conversation(PDO $pdo, int $conversation_id, string $admin_id): 
     $stmt->execute([$admin_id, $conversation_id]);
 }
 
+// Permanently removes a conversation (and, via ON DELETE CASCADE on
+// chat_messages, all of its messages) — used by the admin dashboard for
+// cleaning up stale guest threads. Returns true if a row was deleted.
+function delete_conversation(PDO $pdo, int $conversation_id): bool {
+    $stmt = $pdo->prepare("DELETE FROM chat_conversations WHERE conversation_id = ?");
+    $stmt->execute([$conversation_id]);
+    return $stmt->rowCount() > 0;
+}
+
 // For the admin dashboard's contact list: every conversation with a
 // preview of its last message, newest activity first.
 function get_all_conversations_for_admin(PDO $pdo): array {

@@ -111,7 +111,7 @@ $is_minimal_header = (isset($current_page) && in_array($current_page, ['order_co
     </div>
   </header>
 
-  <?php if (!$is_admin_page): ?>
+  <?php if (!$is_admin_page && (!isset($current_page) || $current_page !== 'contact')): ?>
     <?php require_once __DIR__ . '/../includes/widgets/chat-widget.php'; ?>
     <script src="../assets/js/chat-widget.js"></script>
   <?php endif; ?>

@@ -40,6 +40,7 @@ $admin_tabs = [
 
 $controllable_pages = get_controllable_pages();
 $controllable_modals = get_controllable_modals();
+$controllable_widgets = get_controllable_widgets();
 
 $active_tab = $_GET['tab'] ?? 'overview';
 if (!array_key_exists($active_tab, $admin_tabs)) {
@@ -66,10 +67,22 @@ $log_entities = [
     'user'            => 'User',
     'page_visibility' => 'Page Visibility',
     'modal_visibility'=> 'Modal Visibility',
+    'widget_visibility'=> 'Widget Visibility',
 ];
 
 $message = '';
 $error = '';
+
+// Picked up after a redirect (Post/Redirect/Get) — see send_admin_reply
+// below for why some actions redirect instead of falling through.
+if (!empty($_SESSION['admin_flash_message'])) {
+    $message = $_SESSION['admin_flash_message'];
+    unset($_SESSION['admin_flash_message']);
+}
+if (!empty($_SESSION['admin_flash_error'])) {
+    $error = $_SESSION['admin_flash_error'];
+    unset($_SESSION['admin_flash_error']);
+}
 
 // Handle Adding/Editing/Deleting Products and Updating/Deleting Orders
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -204,6 +217,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         );
         $message = $hidden ? 'All modals are now hidden.' : 'All modals are now visible.';
 
+    } elseif ($_POST['action'] === 'toggle_widget_visibility') {
+        $widget_key = trim($_POST['widget_key'] ?? '');
+        $hidden     = ($_POST['hidden'] ?? '0') === '1';
+
+        if (array_key_exists($widget_key, $controllable_widgets)) {
+            set_widget_hidden($pdo, $widget_key, $hidden);
+            log_activity(
+                $pdo, $_SESSION['u_id'], 'update', 'widget_visibility', $widget_key,
+                ($hidden ? 'Hid' : 'Unhid') . " the \"{$controllable_widgets[$widget_key]}\""
+            );
+            $message = $controllable_widgets[$widget_key] . ($hidden ? ' is now hidden.' : ' is now visible.');
+        } else {
+            $error = "Unknown widget.";
+        }
+
+    } elseif ($_POST['action'] === 'toggle_all_widgets') {
+        $hidden = ($_POST['hidden'] ?? '0') === '1';
+
+        set_all_widgets_hidden($pdo, $hidden);
+        log_activity(
+            $pdo, $_SESSION['u_id'], 'update', 'widget_visibility', 'all',
+            $hidden ? 'Hid every widget' : 'Made every widget visible'
+        );
+        $message = $hidden ? 'All widgets are now hidden.' : 'All widgets are now visible.';
+
     } elseif ($_POST['action'] === 'delete_order') {
         $order_id_post  = trim($_POST['order_id'] ?? '');
         $existing_order = $order_id_post !== '' ? get_order_admin($pdo, $order_id_post) : null;
@@ -226,12 +264,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             assign_conversation($pdo, $conversation_id, $_SESSION['u_id']);
             add_chat_message($pdo, $conversation_id, 'admin', $_SESSION['u_id'], $reply_message);
         } else {
-            $error = "Reply message can't be empty.";
+            $_SESSION['admin_flash_error'] = "Reply message can't be empty.";
         }
+
+        // Redirect (Post/Redirect/Get) so refreshing the page never
+        // resubmits this reply — this was causing the last message sent
+        // to duplicate itself on reload.
+        // Anchor back to the support section (instead of the very top of
+        // the page) so admins land back where the conversation is.
+        header("Location: admin-portal.php?tab=support&conversation_id=" . $conversation_id . "#supportSection");
+        exit;
+
+    } elseif ($_POST['action'] === 'return_to_bot') {
+        $conversation_id = intval($_POST['conversation_id'] ?? 0);
+        if ($conversation_id > 0) {
+            set_conversation_status($pdo, $conversation_id, 'bot');
+            $_SESSION['admin_flash_message'] = "Conversation handed back to the bot.";
+        }
+
+        header("Location: admin-portal.php?tab=support&conversation_id=" . $conversation_id . "#supportSection");
+        exit;
+
+    } elseif ($_POST['action'] === 'delete_conversation') {
+        $conversation_id = intval($_POST['conversation_id'] ?? 0);
+        if ($conversation_id > 0 && delete_conversation($pdo, $conversation_id)) {
+            $_SESSION['admin_flash_message'] = "Conversation deleted.";
+        } else {
+            $_SESSION['admin_flash_error'] = "Could not delete that conversation.";
+        }
+
+        // No conversation_id in the redirect — it no longer exists, so
+        // just land back on the (now conversation-less) support tab.
+        header("Location: admin-portal.php?tab=support#supportSection");
+        exit;
     }
 }
-
-// Fetch all products for the Products management table
 $all_products = [];
 $all_products_images = [];
 if ($active_tab === 'products') {
@@ -300,13 +367,17 @@ if ($active_tab === 'crud_log') {
 // Fetch data for the Site Controls tab
 $page_visibility  = [];
 $modal_visibility = [];
+$widget_visibility = [];
 $all_pages_hidden = false;
 $all_modals_hidden = false;
+$all_widgets_hidden = false;
 if ($active_tab === 'site_controls') {
     $page_visibility   = get_all_page_visibility($pdo);
     $modal_visibility  = get_all_modal_visibility($pdo);
+    $widget_visibility = get_all_widget_visibility($pdo);
     $all_pages_hidden  = are_all_pages_hidden($pdo);
     $all_modals_hidden = are_all_modals_hidden($pdo);
+    $all_widgets_hidden = are_all_widgets_hidden($pdo);
 }
 
 // Fetch data for Metrics tab
@@ -315,7 +386,17 @@ if ($active_tab === 'overview') {
     $total_users = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
     $total_products = $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
     $total_orders = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
-    $total_revenue = $pdo->query("SELECT SUM(total_amount) FROM orders WHERE status != 'cancelled'")->fetchColumn() ?: 0;
+
+    // Total Revenue only counts orders that have actually completed.
+    $total_revenue = $pdo->query("SELECT SUM(total_amount) FROM orders WHERE status = 'completed'")->fetchColumn() ?: 0;
+
+    // Potential Revenue: everything still "in flight" — i.e. not yet
+    // completed, and not cancelled (which will never be collected).
+    $potential_revenue = $pdo->query("SELECT SUM(total_amount) FROM orders WHERE status NOT IN ('completed', 'cancelled')")->fetchColumn() ?: 0;
+
+    // Shop/Hardware Revenue: no separate category split yet, so this is
+    // just a mirror of Total Revenue for now.
+    $shop_revenue = $total_revenue;
 }
 
 // Fetch data for the Customer Support Chat tab
@@ -595,9 +676,9 @@ if ($active_tab === 'support') {
               <div class="order-detail-panel">
                 <h3>Payment</h3>
                 <p><?= htmlspecialchars(ucwords(str_replace('_', ' ', $view_order['payment_method']))) ?></p>
-                <p style="margin-top: 10px;">Subtotal: $<?= number_format($view_order['subtotal'], 2) ?></p>
+                <p style="margin-top: 10px;">Subtotal: ₱<?= number_format($view_order['subtotal'], 2) ?></p>
                 <p>Shipping: <?= $view_order['shipping_fee'] > 0 ? '₱' . number_format($view_order['shipping_fee'], 2) : 'Free' ?></p>
-                <p style="color: #0adde0; font-weight: 700;">Total: $<?= number_format($view_order['total_amount'], 2) ?></p>
+                <p style="color: #0adde0; font-weight: 700;">Total: ₱<?= number_format($view_order['total_amount'], 2) ?></p>
               </div>
 
               <div class="order-detail-panel">
@@ -743,6 +824,22 @@ if ($active_tab === 'support') {
               <h3>Total Revenue</h3>
               <p style="font-size: 1.8rem; font-weight: bold; color: #facc15; margin-top: 10px;">₱<?= number_format($total_revenue, 2) ?></p>
             </div>
+            <div class="order-detail-panel">
+              <h3>Placeholder Metrics</h3>
+              <p style="font-size: 1.8rem; font-weight: bold; color: var(--text-faint, #7a8ba3); margin-top: 10px;">—</p>
+            </div>
+            <div class="order-detail-panel">
+              <h3>Placeholder Metrics</h3>
+              <p style="font-size: 1.8rem; font-weight: bold; color: var(--text-faint, #7a8ba3); margin-top: 10px;">—</p>
+            </div>
+            <div class="order-detail-panel">
+              <h3>Shop/Hardware Revenue</h3>
+              <p style="font-size: 1.8rem; font-weight: bold; color: #4f8ff7; margin-top: 10px;">₱<?= number_format($shop_revenue, 2) ?></p>
+            </div>
+            <div class="order-detail-panel">
+              <h3>Potential Revenue</h3>
+              <p style="font-size: 1.8rem; font-weight: bold; color: #facc15; margin-top: 10px;">₱<?= number_format($potential_revenue, 2) ?></p>
+            </div>
           </div>
         </section>
 
@@ -853,6 +950,55 @@ if ($active_tab === 'support') {
               </form>
             <?php endforeach; ?>
           </div>
+
+          <h3 style="margin-bottom: 16px; color: #0adde0;">Category: Widgets</h3>
+
+          <!-- TOGGLE ALL WIDGETS -->
+          <form method="post" id="toggle-all-widgets-form">
+            <input type="hidden" name="action" value="toggle_all_widgets">
+            <input type="hidden" name="hidden" id="toggle-all-widgets-hidden-input" value="<?= $all_widgets_hidden ? '0' : '1' ?>">
+            <div class="blackout-master-row">
+              <div class="blackout-label">
+                <strong>Hide All Widgets</strong>
+                <span>Puts every widget into blackout at once.</span>
+              </div>
+              <label class="toggle-switch master">
+                <input type="checkbox"
+                       <?= $all_widgets_hidden ? 'checked' : '' ?>
+                       onchange="
+                         document.getElementById('toggle-all-widgets-hidden-input').value = this.checked ? '1' : '0';
+                         document.getElementById('toggle-all-widgets-form').submit();
+                       ">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </form>
+
+          <!-- PER-WIDGET TOGGLES -->
+          <div class="page-visibility-list">
+            <?php foreach ($controllable_widgets as $key => $label):
+              $is_hidden = $widget_visibility[$key] ?? false;
+            ?>
+              <form method="post" class="page-visibility-row <?= $is_hidden ? 'is-hidden' : '' ?>" id="toggle-form-<?= $key ?>">
+                <input type="hidden" name="action" value="toggle_widget_visibility">
+                <input type="hidden" name="widget_key" value="<?= htmlspecialchars($key) ?>">
+                <input type="hidden" name="hidden" id="toggle-hidden-input-<?= $key ?>" value="<?= $is_hidden ? '0' : '1' ?>">
+                <div>
+                  <span class="page-name"><?= htmlspecialchars($label) ?></span>
+                  <span class="page-status"><?= $is_hidden ? 'Currently hidden' : 'Currently visible' ?></span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox"
+                         <?= $is_hidden ? 'checked' : '' ?>
+                         onchange="
+                           document.getElementById('toggle-hidden-input-<?= $key ?>').value = this.checked ? '1' : '0';
+                           document.getElementById('toggle-form-<?= $key ?>').submit();
+                         ">
+                  <span class="toggle-slider"></span>
+                </label>
+              </form>
+            <?php endforeach; ?>
+          </div>
         </section>
 
       <?php elseif ($active_tab === 'crud_log'): ?>
@@ -919,7 +1065,7 @@ if ($active_tab === 'support') {
         </section>
 
       <?php elseif ($active_tab === 'support'): ?>
-        <section class="admin-panel">
+        <section class="admin-panel" id="supportSection">
           <h2>Customer Support Chat</h2>
           <?php if ($message): ?><p style="color: #0ADDEE; margin-bottom: 15px;"><?= htmlspecialchars($message) ?></p><?php endif; ?>
           <?php if ($error): ?><p style="color: #f87171; margin-bottom: 15px;"><?= htmlspecialchars($error) ?></p><?php endif; ?>
@@ -950,9 +1096,24 @@ if ($active_tab === 'support') {
               <?php else: ?>
                 <div class="support-chat-header">
                   <strong><?= htmlspecialchars(conversation_display_name($selected_conversation)) ?></strong>
-                  <span class="status-badge support-status-<?= htmlspecialchars($selected_conversation['status']) ?>">
-                    <?= htmlspecialchars(chat_status_label($selected_conversation['status'])) ?>
-                  </span>
+                  <div class="support-chat-header-right">
+                    <span class="status-badge support-status-<?= htmlspecialchars($selected_conversation['status']) ?>">
+                      <?= htmlspecialchars(chat_status_label($selected_conversation['status'])) ?>
+                    </span>
+                    <?php if ($selected_conversation['status'] !== 'bot'): ?>
+                      <form method="post" class="support-return-to-bot-form">
+                        <input type="hidden" name="action" value="return_to_bot">
+                        <input type="hidden" name="conversation_id" value="<?= $selected_conversation['conversation_id'] ?>">
+                        <button type="submit" class="btn btn-outline support-return-to-bot-btn">Return to Bot</button>
+                      </form>
+                    <?php endif; ?>
+                    <form method="post" class="support-delete-conversation-form"
+                          onsubmit="return confirm('Delete this conversation? This can\'t be undone.');">
+                      <input type="hidden" name="action" value="delete_conversation">
+                      <input type="hidden" name="conversation_id" value="<?= $selected_conversation['conversation_id'] ?>">
+                      <button type="submit" class="btn btn-outline support-delete-conversation-btn">Delete</button>
+                    </form>
+                  </div>
                 </div>
 
                 <div class="support-chat-messages"
@@ -966,10 +1127,10 @@ if ($active_tab === 'support') {
                   <?php endforeach; ?>
                 </div>
 
-                <form method="post" class="support-reply-form">
+                <form method="post" class="support-reply-form" id="supportReplyForm">
                   <input type="hidden" name="action" value="send_admin_reply">
                   <input type="hidden" name="conversation_id" value="<?= $selected_conversation['conversation_id'] ?>">
-                  <textarea name="message" rows="2" placeholder="Type a reply..." required></textarea>
+                  <textarea name="message" id="supportReplyInput" rows="1" placeholder="Type a reply... (Enter to send, Shift+Enter for a new line)" required></textarea>
                   <button type="submit" class="btn btn-primary"><?php icon('send'); ?></button>
                 </form>
               <?php endif; ?>

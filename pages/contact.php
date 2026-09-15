@@ -7,6 +7,7 @@
     require_once __DIR__ . '/../config/db.php';
     require_once __DIR__ . '/../includes/functions/cart-functions.php';
     require_once __DIR__ . '/../includes/functions/site-control-functions.php';
+    require_once __DIR__ . '/../includes/functions/chat-functions.php';
     require_once __DIR__ . '/../helpers/icons.php';
 
     $is_logged_in = isset($_SESSION['u_id']);
@@ -17,6 +18,53 @@
 
     $page_title = "Timosa Tech - Contact";
     $current_page = 'contact';
+
+    // The written contact form feeds into the exact same conversation
+    // system as the live chat, rather than going nowhere: it shows up in
+    // the admin dashboard's Customer Support Chat tab like any other
+    // conversation. Since a form submission isn't something the visitor is
+    // waiting on in real time, it skips the bot and goes straight into the
+    // "needs a human" queue instead of getting an auto-reply.
+    $contact_submitted = false;
+    $contact_form_error = '';
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'], $_POST['email'], $_POST['message'])) {
+        $cf_name    = trim($_POST['name']);
+        $cf_email   = trim($_POST['email']);
+        $cf_phone   = trim($_POST['phone'] ?? '');
+        $cf_subject = trim($_POST['subject'] ?? 'general');
+        $cf_message = trim($_POST['message']);
+
+        if ($cf_name !== '' && $cf_email !== '' && $cf_message !== '') {
+            $guest_token = $is_logged_in ? null : get_or_create_guest_token();
+            $conversation = get_or_create_conversation($pdo, $is_logged_in ? $_SESSION['u_id'] : null, $guest_token);
+
+            if (empty($conversation['visitor_name'])) {
+                $stmt = $pdo->prepare("UPDATE chat_conversations SET visitor_name = ? WHERE conversation_id = ?");
+                $stmt->execute([$cf_name, $conversation['conversation_id']]);
+            }
+
+            $subject_labels = [
+                'general'      => 'General Inquiry',
+                'repair'       => 'Repair & Maintenance',
+                'printing'     => 'Printing Services',
+                'networking'   => 'Networking & IT Services',
+                'consultation' => 'Online Consultation',
+                'order'        => 'An Existing Order',
+            ];
+
+            $form_note = "[Contact Form — " . ($subject_labels[$cf_subject] ?? 'General Inquiry') . "]\n"
+                       . "From: $cf_name ($cf_email" . ($cf_phone !== '' ? ", $cf_phone" : '') . ")\n\n"
+                       . $cf_message;
+
+            add_chat_message($pdo, $conversation['conversation_id'], 'visitor', $is_logged_in ? $_SESSION['u_id'] : null, $form_note);
+            set_conversation_status($pdo, $conversation['conversation_id'], 'pending_human');
+
+            $contact_submitted = true;
+        } else {
+            $contact_form_error = "Please fill in your name, email, and message.";
+        }
+    }
 
 ?>
 
@@ -61,47 +109,8 @@
       </section>
 
       <div class="container contact-layout">
-        <!-- CONTACT FORM -->
-        <div class="contact-form-card">
-          <h2>Send a Message</h2>
-          <form class="contact-form" method="post">
-            <div class="form-grid-2">
-              <div class="form-group">
-                <label for="contact_name">Full Name</label>
-                <input type="text" id="contact_name" name="name" class="form-control" placeholder="Juan Dela Cruz" required>
-              </div>
-              <div class="form-group">
-                <label for="contact_email">Email</label>
-                <input type="email" id="contact_email" name="email" class="form-control" placeholder="you@example.com" required>
-              </div>
-            </div>
-
-            <div class="form-grid-2">
-              <div class="form-group">
-                <label for="contact_phone">Phone Number (Optional)</label>
-                <input type="text" id="contact_phone" name="phone" class="form-control" placeholder="+63 900 000 0000">
-              </div>
-              <div class="form-group">
-                <label for="contact_subject">Subject</label>
-                <select id="contact_subject" name="subject" class="form-control">
-                  <option value="general">General Inquiry</option>
-                  <option value="repair">Repair &amp; Maintenance</option>
-                  <option value="printing">Printing Services</option>
-                  <option value="networking">Networking &amp; IT Services</option>
-                  <option value="consultation">Online Consultation</option>
-                  <option value="order">An Existing Order</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="contact_message">Message</label>
-              <textarea id="contact_message" name="message" class="form-control" rows="5" placeholder="Tell us what's going on..." required></textarea>
-            </div>
-
-            <button type="submit" class="btn btn-primary">Send Message</button>
-          </form>
-        </div>
+        <!-- LIVE CHAT (bigger than the floating widget) -->
+        <?php include __DIR__ . '/../includes/widgets/contact-chat-panel.php'; ?>
 
         <!-- CONTACT INFO -->
         <div>
@@ -134,7 +143,7 @@
           </div>
 
           <div class="contact-info-card">
-            <h3><?php icon('clock'); ?> &nbsp;Business Hours</h3>
+            <h3><span class="contact-hours-icon"><?php icon('clock'); ?></span>Business Hours</h3>
             <div class="contact-hours-row"><span>Monday – Friday</span><span>8:00 AM – 6:00 PM</span></div>
             <div class="contact-hours-row"><span>Saturday</span><span>9:00 AM – 3:00 PM</span></div>
             <div class="contact-hours-row"><span>Sunday</span><span>Closed</span></div>
@@ -161,6 +170,64 @@
           </div>
         </div>
       </div>
+
+      <!-- WRITTEN MESSAGE (secondary option to live chat) -->
+      <section class="contact-form-section">
+        <div class="container">
+          <div class="section-header-center">
+            <span class="section-tag">PREFER TO WRITE IT OUT?</span>
+            <h2>Send a Message</h2>
+            <p style="color: var(--text-muted); max-width: 50ch; margin: 10px auto 0;">This goes straight to our team's inbox — same place your live chat messages land — so you'll hear back even if no one's online right now.</p>
+          </div>
+
+          <div class="contact-form-card" style="max-width: 640px; margin: 0 auto;">
+            <?php if ($contact_submitted): ?>
+              <div class="alert alert-success">Thanks, <?= htmlspecialchars($cf_name) ?>! We've got your message and will get back to you soon.</div>
+            <?php else: ?>
+              <?php if ($contact_form_error): ?>
+                <div class="alert alert-danger"><?= htmlspecialchars($contact_form_error) ?></div>
+              <?php endif; ?>
+              <form class="contact-form" method="post">
+                <div class="form-grid-2">
+                  <div class="form-group">
+                    <label for="contact_name">Full Name</label>
+                    <input type="text" id="contact_name" name="name" class="form-control" placeholder="Juan Dela Cruz" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="contact_email">Email</label>
+                    <input type="email" id="contact_email" name="email" class="form-control" placeholder="you@example.com" required>
+                  </div>
+                </div>
+
+                <div class="form-grid-2">
+                  <div class="form-group">
+                    <label for="contact_phone">Phone Number (Optional)</label>
+                    <input type="text" id="contact_phone" name="phone" class="form-control" placeholder="+63 900 000 0000">
+                  </div>
+                  <div class="form-group">
+                    <label for="contact_subject">Subject</label>
+                    <select id="contact_subject" name="subject" class="form-control">
+                      <option value="general">General Inquiry</option>
+                      <option value="repair">Repair &amp; Maintenance</option>
+                      <option value="printing">Printing Services</option>
+                      <option value="networking">Networking &amp; IT Services</option>
+                      <option value="consultation">Online Consultation</option>
+                      <option value="order">An Existing Order</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="contact_message">Message</label>
+                  <textarea id="contact_message" name="message" class="form-control" rows="5" placeholder="Tell us what's going on..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Send Message</button>
+              </form>
+            <?php endif; ?>
+          </div>
+        </div>
+      </section>
 
       <!-- CALL TO ACTION -->
       <section class="cta-banner">
@@ -189,6 +256,7 @@
   <?php include __DIR__ . '/../includes/modals/cart-modal.php'; ?>
   <script src="../assets/js/auth.js"></script>
   <script src="../assets/js/cart.js"></script>
+  <script src="../assets/js/contact-chat.js"></script>
 
     </main>
 </body>

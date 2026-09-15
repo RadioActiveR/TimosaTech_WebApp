@@ -1,0 +1,123 @@
+/* ==========================================================================
+   SHOP PAGE — layout & elements unique to shop.php
+   (Product card footer styling lives separately in shop-cards.css;
+   this file covers page structure: header, search, sidebar, categories.)
+   Uses tokens already defined in variables.css / styles.css.
+   ========================================================================== */
+
+.shop-main {
+  margin-top: 40px;
+  margin-bottom: 60px;
+}
+
+.shop-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.shop-header h1 {
+  margin: 0;
+  font-size: 2.2rem;
+}
+
+.shop-search-form {
+  display: flex;
+  gap: 10px;
+}
+
+.shop-search-form input {
+  background: var(--bg-raised);
+  border: 1px solid var(--bg-card-border);
+  padding: 10px 15px;
+  color: var(--text-primary);
+  border-radius: 8px;
+  outline: none;
+}
+
+.shop-search-form input:focus {
+  border-color: var(--accent-cyan);
+}
+
+.shop-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 30px;
+  align-items: start; /* Prevents vertical stretching and aligns top of sidebar with products */
+}
+
+.shop-sidebar {
+  background: var(--bg-raised);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 12px;
+  padding: 20px;
+  height: fit-content;
+}
+
+.shop-sidebar h3 {
+  margin-top: 0;
+  color: var(--accent-cyan);
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+}
+
+.category-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.category-list a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  color: #cbd5e1;
+  font-weight: normal;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.category-list a:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.category-list a.active {
+  background: var(--accent-cyan);
+  color: #000;
+  font-weight: bold;
+}
+
+.no-products {
+  color: var(--text-muted);
+}
+
+/* Shop grid card thumbnail — homepage's featured cards use the plainer
+   shared .product-thumb instead, so this stays shop-only */
+.shop-product-thumb {
+  aspect-ratio: 4 / 2;
+  width: 100%;
+  background: linear-gradient(155deg, #16283f 0%, #0b1626 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--bg-card-border);
+  overflow: hidden;
+}
+.shop-product-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 860px) {
+  .shop-layout { grid-template-columns: 1fr; }
+}

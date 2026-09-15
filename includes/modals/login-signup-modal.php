@@ -37,6 +37,7 @@ $is_open    = isset($auth_tab);
       <?php endif; ?>
 
       <input type="hidden" name="action" value="login">
+      <input type="hidden" name="redirect_to" class="auth-redirect-to" value="<?= htmlspecialchars($auth_old_input['redirect_to'] ?? '') ?>">
 
       <div class="auth-field">
         <label for="loginIdentity">Email or Username</label>
@@ -81,6 +82,7 @@ $is_open    = isset($auth_tab);
       <?php endif; ?>
 
       <input type="hidden" name="action" value="signup">
+      <input type="hidden" name="redirect_to" class="auth-redirect-to" value="<?= htmlspecialchars($auth_old_input['redirect_to'] ?? '') ?>">
 
       <div class="auth-field">
         <label for="signupUsername">Username</label>

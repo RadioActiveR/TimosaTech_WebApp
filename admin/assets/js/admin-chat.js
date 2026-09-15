@@ -8,6 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const conversationId = container.dataset.conversationId;
   let lastId = parseInt(container.dataset.lastId, 10) || 0;
 
+  // Show the most recent messages first, not the oldest ones — the
+  // container renders top-to-bottom on load, so without this the
+  // admin lands scrolled to the top of the conversation.
+  container.scrollTop = container.scrollHeight;
+
   function renderMessage(msg) {
     const el = document.createElement('div');
     el.className = 'support-msg support-msg-' + msg.sender_type;
@@ -31,4 +36,29 @@ document.addEventListener('DOMContentLoaded', () => {
       // Ignore transient poll failures — it'll just retry next interval.
     }
   }, 4000);
+
+  // Enter sends the reply, Shift+Enter inserts a newline (default
+  // textarea behavior, so we only need to intercept plain Enter).
+  const replyForm  = document.getElementById('supportReplyForm');
+  const replyInput = document.getElementById('supportReplyInput');
+
+  if (replyInput && replyForm) {
+    replyInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (replyInput.value.trim() !== '') {
+          replyForm.requestSubmit();
+        }
+      }
+    });
+
+    // Auto-expand: grow with content up to a max height, then scroll.
+    const maxHeight = 160;
+    function autoExpand() {
+      replyInput.style.height = 'auto';
+      replyInput.style.height = Math.min(replyInput.scrollHeight, maxHeight) + 'px';
+    }
+    replyInput.addEventListener('input', autoExpand);
+    autoExpand();
+  }
 });

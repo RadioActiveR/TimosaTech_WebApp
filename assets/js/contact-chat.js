@@ -1,19 +1,16 @@
-/* Timosa Tech — floating support chat widget (open/close, send, poll). */
+/* Timosa Tech — larger inline chat panel on the Contact page.
+   Same backend as the floating widget (chat-handler.php), just always
+   visible instead of toggled, so there's no open/close logic here. */
 
 document.addEventListener('DOMContentLoaded', () => {
-  const widget       = document.getElementById('chatWidget');
-  const toggleBtn     = document.getElementById('chatWidgetToggle');
-  const closeBtn      = document.getElementById('chatWidgetClose');
-  const messagesEl    = document.getElementById('chatWidgetMessages');
-  const form          = document.getElementById('chatWidgetForm');
-  const input         = document.getElementById('chatWidgetInput');
+  const messagesEl = document.getElementById('contactChatMessages');
+  const form        = document.getElementById('contactChatForm');
+  const input        = document.getElementById('contactChatInput');
 
-  if (!widget) return;
+  if (!messagesEl || !form || !input) return;
 
   let conversationId = null;
   let lastMessageId  = 0;
-  let pollTimer      = null;
-  let historyLoaded  = false;
 
   function renderMessage(msg) {
     const el = document.createElement('div');
@@ -30,9 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadHistory() {
-    if (historyLoaded) return;
-    historyLoaded = true;
-
     try {
       const res = await fetch('../includes/handlers/chat-handler.php?action=history');
       const data = await res.json();
@@ -53,13 +47,12 @@ document.addEventListener('DOMContentLoaded', () => {
       scrollToBottom();
       startPolling();
     } catch (err) {
-      // Silent fail — widget stays empty until the visitor tries again.
+      // Silent fail — panel stays empty until the visitor tries again.
     }
   }
 
   function startPolling() {
-    if (pollTimer) return;
-    pollTimer = setInterval(async () => {
+    setInterval(async () => {
       if (!conversationId) return;
       try {
         const res = await fetch(
@@ -71,23 +64,11 @@ document.addEventListener('DOMContentLoaded', () => {
           scrollToBottom();
         }
       } catch (err) {
-        // Ignore transient poll failures — it'll just retry next interval.
+        // Ignore transient poll failures.
       }
     }, 4000);
   }
 
-  toggleBtn.addEventListener('click', () => {
-    widget.classList.toggle('active');
-    if (widget.classList.contains('active')) {
-      loadHistory();
-      input.focus();
-    }
-  });
-
-  closeBtn.addEventListener('click', () => widget.classList.remove('active'));
-
-  // Enter sends the message, Shift+Enter inserts a newline (default
-  // textarea behavior, so we only need to intercept plain Enter).
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -97,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Auto-expand: grow with content up to a max height, then scroll.
   const maxInputHeight = 120;
   function autoExpandInput() {
     input.style.height = 'auto';
@@ -126,12 +106,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (data.success) {
         conversationId = data.conversation_id;
-        // Redraw from the authoritative server list so we don't end up
-        // with a duplicate of the message we already drew optimistically.
         messagesEl.innerHTML = '';
         data.messages.forEach(renderMessage);
         scrollToBottom();
-        startPolling();
       }
     } catch (err) {
       const errEl = document.createElement('div');
@@ -140,4 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
       messagesEl.appendChild(errEl);
     }
   });
+
+  loadHistory();
 });

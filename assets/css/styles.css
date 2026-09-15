@@ -1185,7 +1185,27 @@ section { padding: 90px 0; }
 }
 
 /* INFO: Cart Nav Button */
-.cart-nav-btn { display: flex; align-items: center; gap: 6px; }
+/* Icon-only button: .btn-outline's default padding (10px 22px) is sized
+   for text and reads as an oversized empty pill without it — tightened
+   here specifically for the cart button. */
+.cart-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+}
+
+/* The <svg> from icon() has no width/height of its own, so without this
+   it falls back to inconsistent browser default sizing — effectively
+   invisible in some cases (an unstyled fill:none/stroke-only SVG at that
+   default size can render as barely a sliver), which is why the cart
+   icon looked like it "disappeared" rather than actually being
+   conditional on cart contents. */
+.cart-nav-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
 .cart-count-badge {
   background: var(--accent-cyan);
   color: #06121c;

@@ -109,10 +109,17 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
 
       if (!isLoggedIn) {
-        const authOverlay = document.getElementById('authOverlay');
-        if (authOverlay) {
-          authOverlay.classList.add('active');
-          document.body.style.overflow = 'hidden';
+        // Same treatment as the guest Add to Cart prompt: once they log
+        // in, send them to the shop page rather than back to wherever
+        // View Details happened to be clicked from.
+        if (typeof window.openAuthModal === 'function') {
+          window.openAuthModal('login', '/TimosaTech/pages/shop.php');
+        } else {
+          const authOverlay = document.getElementById('authOverlay');
+          if (authOverlay) {
+            authOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+          }
         }
         return;
       }

@@ -169,7 +169,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (res.status === 401) {
       closeCart();
-      if (authOverlay) {
+      if (typeof window.openAuthModal === "function") {
+        // Guests get bounced here from Add to Cart on either the homepage
+        // or the shop page — either way, once they log in they should
+        // land on the shop page, not back on whichever page the button
+        // happened to be clicked from.
+        window.openAuthModal("login", "/TimosaTech/pages/shop.php");
+      } else if (authOverlay) {
+        // Fallback in case auth.js hasn't loaded for some reason.
         authOverlay.classList.add("active");
         document.body.style.overflow = "hidden";
       }

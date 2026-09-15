@@ -15,9 +15,85 @@
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
   gap: 50px;
-  padding: 0 0 90px;
+  padding: 0 0 60px;
   align-items: start;
 }
+
+/* ---- Live chat panel (bigger than the floating widget) ---- */
+.contact-chat-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  height: 480px;
+  overflow: hidden;
+}
+
+.contact-chat-header {
+  padding: 16px 20px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--bg-card-border);
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+.contact-chat-subtitle {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.contact-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contact-chat-form {
+  display: flex;
+  gap: 10px;
+  padding: 14px;
+  border-top: 1px solid var(--bg-card-border);
+}
+.contact-chat-form textarea {
+  flex: 1;
+  background: var(--bg1);
+  border: 1px solid var(--bg-card-border);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-family: var(--font-body);
+  resize: none;
+  max-height: 120px;
+  overflow-y: auto;
+  line-height: 1.4;
+}
+.contact-chat-form textarea:focus { outline: none; border-color: var(--accent-cyan); }
+.contact-chat-form button {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+.contact-chat-form button svg { width: 17px; height: 17px; stroke: #06121c; }
+
+/* ---- Secondary: written message form ---- */
+.contact-form-section {
+  padding: 0 0 90px;
+}
+.contact-form-section .section-header-center { margin-bottom: 30px; }
 
 /* ---- Form ---- */
 .contact-form-card {
@@ -43,6 +119,20 @@
   margin-bottom: 20px;
 }
 .contact-info-card h3 { font-size: 1.05rem; margin-bottom: 18px; }
+
+/* icon('clock') outputs a bare <svg> with no width/height of its own —
+   without this it falls back to an oversized browser default size. */
+.contact-hours-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+  vertical-align: -4px;
+}
+.contact-hours-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--accent-cyan);
+}
 
 .contact-info-row {
   display: flex;
@@ -88,6 +178,7 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
   border: 1px solid var(--bg-card-border);
+  margin-bottom: 30px;
 }
 .contact-map iframe { width: 100%; height: 220px; border: 0; display: block; }
 
