@@ -4,6 +4,8 @@
  * cart into a new order at checkout) so admin CRUD logic lives on its own.
  */
 
+require_once __DIR__ . '/../../../includes/functions/notification-functions.php';
+
 // List orders for the admin table, optionally filtered by status and/or a
 // free-text search across order id, recipient name, username, and email.
 function get_orders_admin(PDO $pdo, string $status_filter = 'all', string $search = ''): array {
@@ -68,13 +70,16 @@ function get_order_status_log(PDO $pdo, string $order_id): array {
 // Updates an order's status and writes an entry to order_status_log in the
 // same transaction, so the audit trail can never drift from the actual status.
 function update_order_status(PDO $pdo, string $order_id, string $new_status, string $changed_by): bool {
-    $stmt = $pdo->prepare("SELECT status FROM orders WHERE order_id = ?");
+    $stmt = $pdo->prepare("SELECT status, u_id FROM orders WHERE order_id = ?");
     $stmt->execute([$order_id]);
-    $old_status = $stmt->fetchColumn();
+    $order = $stmt->fetch();
 
-    if ($old_status === false) {
+    if (!$order) {
         return false; // order doesn't exist
     }
+    $old_status = $order['status'];
+    $order_u_id = $order['u_id'];
+
     if ($old_status === $new_status) {
         return true; // nothing to do
     }
@@ -92,6 +97,7 @@ function update_order_status(PDO $pdo, string $order_id, string $new_status, str
         $stmt->execute([$order_id, $old_status, $new_status, $changed_by]);
 
         $pdo->commit();
+        notify_customer_of_order_status($pdo, $order_id, $order_u_id, $new_status);
         return true;
     } catch (Exception $e) {
         $pdo->rollBack();

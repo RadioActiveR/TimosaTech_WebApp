@@ -1,0 +1,8 @@
+INFO: This file exists only to make git track the storage/ folder, since git
+doesn't track empty directories. See .gitignore — storage/* is ignored,
+except this file. Uploaded/generated content (product images, etc.) goes
+here at runtime and is intentionally not committed to the repo.
+
+NOTE: Safe to delete this file once storage/ has real content in it — but if
+storage/ ever becomes empty again, it'll disappear from a fresh git clone
+without a placeholder file like this one.

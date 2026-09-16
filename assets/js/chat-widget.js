@@ -14,15 +14,55 @@ document.addEventListener('DOMContentLoaded', () => {
   let lastMessageId  = 0;
   let pollTimer      = null;
   let historyLoaded  = false;
+  let sending        = false;
+  // Tracks the conversation's last known status so we only show the
+  // "typing" indicator when a bot reply is actually expected — once a
+  // human has taken over, chat-handler.php stops generating bot replies
+  // entirely, and the indicator would just flash and vanish.
+  let knownStatus    = 'bot';
+
+  // Sender labels shown above bot/admin bubbles so a visitor can tell
+  // Stella (AI) apart from a human rep at a glance.
+  const CHAT_MSG_LABELS = { bot: 'Stella (AI)', admin: 'Support Agent' };
 
   function renderMessage(msg) {
     const el = document.createElement('div');
     el.className = 'chat-msg chat-msg-' + msg.sender_type;
-    el.textContent = msg.message;
+
+    const label = CHAT_MSG_LABELS[msg.sender_type];
+    if (label) {
+      const labelEl = document.createElement('span');
+      labelEl.className = 'chat-msg-label';
+      labelEl.textContent = label;
+      el.appendChild(labelEl);
+    }
+
+    const textEl = document.createElement('span');
+    textEl.className = 'chat-msg-text';
+    textEl.textContent = msg.message;
+    el.appendChild(textEl);
+
     messagesEl.appendChild(el);
     if (msg.message_id) {
       lastMessageId = Math.max(lastMessageId, Number(msg.message_id));
     }
+  }
+
+  function showTyping() {
+    if (document.getElementById('chatWidgetTyping')) return;
+    const el = document.createElement('div');
+    el.id = 'chatWidgetTyping';
+    el.className = 'chat-msg chat-msg-bot chat-typing';
+    el.innerHTML =
+      '<span class="chat-msg-label">Stella (AI)</span>' +
+      '<span class="chat-typing-dots"><span></span><span></span><span></span></span>';
+    messagesEl.appendChild(el);
+    scrollToBottom();
+  }
+
+  function hideTyping() {
+    const el = document.getElementById('chatWidgetTyping');
+    if (el) el.remove();
   }
 
   function scrollToBottom() {
@@ -39,13 +79,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!data.success) return;
 
       conversationId = data.conversation_id;
+      knownStatus = data.status;
       messagesEl.innerHTML = '';
 
       if (data.messages.length === 0) {
-        const el = document.createElement('div');
-        el.className = 'chat-msg chat-msg-bot';
-        el.textContent = "Hi! I'm the TimosaTech assistant. Ask me about products, services, or say \"talk to a human\" any time.";
-        messagesEl.appendChild(el);
+        renderMessage({
+          sender_type: 'bot',
+          message: "Hi! I'm the TimosaTech assistant. Ask me about products, services, or say \"talk to a human\" any time.",
+        });
       } else {
         data.messages.forEach(renderMessage);
       }
@@ -60,15 +101,18 @@ document.addEventListener('DOMContentLoaded', () => {
   function startPolling() {
     if (pollTimer) return;
     pollTimer = setInterval(async () => {
-      if (!conversationId) return;
+      if (!conversationId || sending) return;
       try {
         const res = await fetch(
           `../includes/handlers/chat-handler.php?action=poll&conversation_id=${conversationId}&after_id=${lastMessageId}`
         );
         const data = await res.json();
-        if (data.success && data.messages.length) {
-          data.messages.forEach(renderMessage);
-          scrollToBottom();
+        if (data.success) {
+          knownStatus = data.status;
+          if (data.messages.length) {
+            data.messages.forEach(renderMessage);
+            scrollToBottom();
+          }
         }
       } catch (err) {
         // Ignore transient poll failures — it'll just retry next interval.
@@ -115,6 +159,18 @@ document.addEventListener('DOMContentLoaded', () => {
     renderMessage({ sender_type: 'visitor', message: text });
     scrollToBottom();
 
+    // Only show "Stella is typing" when a bot reply is actually coming —
+    // once a human has taken over, chat-handler.php stops generating bot
+    // replies, so the indicator would just flash and disappear for no
+    // reason if shown unconditionally.
+    if (knownStatus === 'bot') showTyping();
+
+    // Pausing polling for the duration of this request closes the race
+    // where a scheduled poll fetches this same visitor message from the
+    // DB (chat-handler.php saves it immediately, before the bot reply is
+    // generated) while it's already showing here as an optimistic render
+    // — which is what caused the visible-until-refresh duplicate.
+    sending = true;
     try {
       const body = new URLSearchParams({ action: 'send', message: text });
       const res = await fetch('../includes/handlers/chat-handler.php', {
@@ -126,18 +182,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (data.success) {
         conversationId = data.conversation_id;
+        knownStatus = data.status;
         // Redraw from the authoritative server list so we don't end up
         // with a duplicate of the message we already drew optimistically.
+        // This also clears the typing indicator, since it's not part of
+        // data.messages.
         messagesEl.innerHTML = '';
+        lastMessageId = 0;
         data.messages.forEach(renderMessage);
         scrollToBottom();
         startPolling();
+      } else {
+        hideTyping();
       }
     } catch (err) {
+      hideTyping();
       const errEl = document.createElement('div');
       errEl.className = 'chat-msg chat-msg-system';
       errEl.textContent = "Couldn't send that — check your connection and try again.";
       messagesEl.appendChild(errEl);
+    } finally {
+      sending = false;
     }
   });
 });

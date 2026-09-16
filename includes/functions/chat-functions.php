@@ -5,6 +5,8 @@
  * admin dashboard's Customer Support Chat tab alike.
  */
 
+require_once __DIR__ . '/notification-functions.php';
+
 // Simple keyword check for "this visitor wants a human" — deliberately not
 // relying on the LLM to self-report this, since a plain keyword match is
 // more predictable to test and debug.
@@ -21,6 +23,54 @@ function chat_wants_human(string $message): bool {
         }
     }
     return false;
+}
+
+// Short, unambiguous "yes" replies — deliberately a small closed list
+// rather than anything fuzzier, so this only fires on a genuine plain
+// affirmative and not on, say, "yes but how much does it cost".
+const CHAT_AFFIRMATIVE_REPLIES = [
+    'yes', 'yeah', 'yep', 'yup', 'sure', 'please', 'ok', 'okay', 'k',
+    'yes please', 'please do', 'go ahead', 'sounds good', 'that works',
+    'that would be great', 'id like that', "i'd like that",
+];
+
+function chat_is_affirmative(string $message): bool {
+    // Trims trailing punctuation so "Yes!" / "yes." / "Sure," all still match.
+    $normalized = strtolower(trim($message, " \t\n\r\0\x0B.!,"));
+    return in_array($normalized, CHAT_AFFIRMATIVE_REPLIES, true);
+}
+
+// True when the bot's own last message was itself offering to bring in a
+// human — e.g. "Would you like me to get a human for you?". Combined with
+// chat_is_affirmative(), this catches a visitor answering "yes please" to
+// that offer, which contains none of CHAT_HUMAN_KEYWORDS on its own and
+// would otherwise just get treated as an ordinary question for the LLM.
+function chat_bot_offered_human(?string $last_bot_message): bool {
+    if (!$last_bot_message) {
+        return false;
+    }
+
+    // Only the LAST sentence — the actual live question posed to the
+    // visitor — is checked, not the whole message. Checking the whole
+    // message caused a false positive: an earlier sentence mentioning
+    // "human" (e.g. "a human representative is still here to help") plus
+    // an unrelated question mark later in the message (e.g. "What's going
+    // on?") was enough to match, even though nothing in the message was
+    // actually offering to connect one.
+    $sentences = preg_split('/(?<=[.?!])\s+/', trim($last_bot_message)) ?: [$last_bot_message];
+    $last_sentence = strtolower(end($sentences));
+
+    $mentions_human = str_contains($last_sentence, 'human')
+        || str_contains($last_sentence, 'representative')
+        || str_contains($last_sentence, 'agent');
+
+    $is_offer_phrasing = str_contains($last_sentence, 'would you like')
+        || str_contains($last_sentence, 'do you want')
+        || str_contains($last_sentence, 'want me to')
+        || str_contains($last_sentence, 'shall i')
+        || str_contains($last_sentence, 'should i');
+
+    return $mentions_human && $is_offer_phrasing;
 }
 
 // Guests are identified by a random token stored in their PHP session —
@@ -85,10 +135,32 @@ function add_chat_message(PDO $pdo, int $conversation_id, string $sender_type, ?
     ");
     $stmt->execute([$conversation_id, $sender_type, $sender_id, $message]);
 
+    $message_id = (int) $pdo->lastInsertId();
+
+    // Confirmed via browser console logging: lastInsertId() has come back
+    // 0 here even though the row was inserted successfully (visible a
+    // moment later via polling, under its real id). 0 is never a
+    // legitimate id for a real AUTO_INCREMENT row, so treat it as a
+    // signal to look the row up directly instead of trusting it blindly.
+    // Reporting id 0 back to the client is what caused the visible
+    // duplicate: the client's "last seen id" tracker never advances past
+    // the previous message (since 0 doesn't beat it), so the very next
+    // poll re-fetches this same row under its real id and renders a
+    // second, genuinely separate bubble for it.
+    if ($message_id === 0) {
+        $lookup = $pdo->prepare("
+            SELECT message_id FROM chat_messages
+            WHERE conversation_id = ? AND sender_type = ? AND message = ?
+            ORDER BY message_id DESC LIMIT 1
+        ");
+        $lookup->execute([$conversation_id, $sender_type, $message]);
+        $message_id = (int) ($lookup->fetchColumn() ?: 0);
+    }
+
     $update = $pdo->prepare("UPDATE chat_conversations SET last_message_at = NOW() WHERE conversation_id = ?");
     $update->execute([$conversation_id]);
 
-    return (int) $pdo->lastInsertId();
+    return $message_id;
 }
 
 // Pass $after_id to only get messages newer than a given message — used
@@ -104,8 +176,25 @@ function get_conversation_messages(PDO $pdo, int $conversation_id, int $after_id
 }
 
 function set_conversation_status(PDO $pdo, int $conversation_id, string $status): void {
+    $stmt = $pdo->prepare("SELECT status FROM chat_conversations WHERE conversation_id = ?");
+    $stmt->execute([$conversation_id]);
+    $old_status = $stmt->fetchColumn();
+
     $stmt = $pdo->prepare("UPDATE chat_conversations SET status = ? WHERE conversation_id = ?");
     $stmt->execute([$status, $conversation_id]);
+
+    // Notify admins the first time a conversation flips to "needs a
+    // human" — not on every message after that, and not if it was
+    // already in that state (e.g. the visitor sends several messages in
+    // a row while waiting). Centralizing this here means every code path
+    // that escalates a conversation, now or in the future, picks it up
+    // automatically instead of each caller having to remember to notify.
+    if ($status === 'pending_human' && $old_status !== 'pending_human') {
+        $conversation = get_conversation($pdo, $conversation_id);
+        if ($conversation) {
+            notify_admins_conversation_needs_human($pdo, $conversation);
+        }
+    }
 }
 
 // Called when an admin sends a reply: claims the conversation for that

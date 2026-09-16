@@ -46,20 +46,48 @@ function update_user_profile(PDO $pdo, string $u_id, array $data): bool {
     ]);
 }
 
-// Changes a user's username after validating format and uniqueness.
+/**
+ * Validates a username against format rules and a reserved-word list.
+ * Shared by signup (login-signup-handler.php) and profile updates
+ * (update_username() below), so the rules only need to change in one place.
+ * Returns null if valid, or a user-facing error string if not.
+ */
+function validate_username(string $username): ?string {
+    $length = strlen($username);
+
+    if ($length < 3 || $length > 20) {
+        return 'Username must be between 3 and 20 characters.';
+    }
+
+    // Letters, numbers, and underscores only. Must start with a letter.
+    // (No emojis, spaces, dashes, or other punctuation.)
+    if (!preg_match('/^[A-Za-z][A-Za-z0-9_]*$/', $username)) {
+        return 'Username must start with a letter and can only contain letters, numbers, and underscores.';
+    }
+
+    // Reserved words (case-insensitive, exact match only — "admin123" is
+    // still allowed, only "admin" itself is blocked)
+    $reserved = [
+        'admin', 'administrator', 'root', 'superuser', 'moderator', 'mod',
+        'support', 'help', 'system', 'staff', 'owner', 'timosatech',
+        'null', 'undefined', 'test', 'guest', 'anonymous', 'api'
+    ];
+    if (in_array(strtolower($username), $reserved, true)) {
+        return 'That username is reserved. Please choose a different one.';
+    }
+
+    return null;
+}
+
+// Changes a user's username after validating format, reserved words, and uniqueness.
 // Returns ['success' => bool, 'error' => string] so the caller can show
 // a specific message rather than a generic failure.
 function update_username(PDO $pdo, string $u_id, string $new_username): array {
     $new_username = trim($new_username);
 
-    if ($new_username === '') {
-        return ['success' => false, 'error' => 'Username cannot be empty.'];
-    }
-    if (strlen($new_username) < 3 || strlen($new_username) > 30) {
-        return ['success' => false, 'error' => 'Username must be between 3 and 30 characters.'];
-    }
-    if (!preg_match('/^[A-Za-z0-9_]+$/', $new_username)) {
-        return ['success' => false, 'error' => 'Username can only contain letters, numbers, and underscores.'];
+    $error = validate_username($new_username);
+    if ($error !== null) {
+        return ['success' => false, 'error' => $error];
     }
 
     // Uniqueness check excludes the user's own current row so re-submitting

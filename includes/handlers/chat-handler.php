@@ -67,13 +67,29 @@ switch ($action) {
         $conversation    = get_or_create_conversation($pdo, $u_id, $guest_token);
         $conversation_id = (int) $conversation['conversation_id'];
 
+        // Captured before inserting the new visitor message, so we can
+        // tell whether the bot itself just asked "want a human?" — a
+        // plain "yes please" reply contains none of CHAT_HUMAN_KEYWORDS
+        // on its own, so without this context it would silently fall
+        // through to an ordinary LLM reply instead of escalating.
+        $last_bot_message = null;
+        foreach (array_reverse(get_conversation_messages($pdo, $conversation_id)) as $row) {
+            if ($row['sender_type'] === 'bot') {
+                $last_bot_message = $row['message'];
+                break;
+            }
+        }
+
         add_chat_message($pdo, $conversation_id, 'visitor', $u_id, $message);
+
+        $wants_human = chat_wants_human($message)
+            || (chat_is_affirmative($message) && chat_bot_offered_human($last_bot_message));
 
         // Only the bot auto-replies while status is still 'bot'. Once a
         // human has been requested (or is already handling it), the admin
         // dashboard takes over and the bot stays quiet.
         if ($conversation['status'] === 'bot') {
-            if (chat_wants_human($message)) {
+            if ($wants_human) {
                 set_conversation_status($pdo, $conversation_id, 'pending_human');
                 add_chat_message(
                     $pdo, $conversation_id, 'bot', null,
@@ -81,10 +97,22 @@ switch ($action) {
                 );
             } else {
                 $history = array_map(
-                    fn($row) => [
-                        'role'    => $row['sender_type'] === 'visitor' ? 'user' : 'assistant',
-                        'content' => $row['message'],
-                    ],
+                    function ($row) {
+                        $role = $row['sender_type'] === 'visitor' ? 'user' : 'assistant';
+                        $content = $row['message'];
+                        // Human admin replies get tagged distinctly in the
+                        // transcript. Without this, once a conversation is
+                        // handed back to the bot (Return to Bot), whatever
+                        // a human said earlier is silently absorbed into
+                        // the bot's own "assistant" history — the bot then
+                        // reads it as something it said itself, and can
+                        // elaborate on it as if a human is still present,
+                        // with nothing to signal the handoff has ended.
+                        if ($row['sender_type'] === 'admin') {
+                            $content = "[Earlier in this conversation, a human support agent (not you) replied]: " . $content;
+                        }
+                        return ['role' => $role, 'content' => $content];
+                    },
                     get_conversation_messages($pdo, $conversation_id)
                 );
 

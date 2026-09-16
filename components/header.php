@@ -1,10 +1,27 @@
 <?php
 require_once __DIR__ . '/../helpers/icons.php';
+require_once __DIR__ . '/../includes/functions/notification-functions.php';
 
 // Determine component view modes based on $current_page
 $is_admin_page     = (isset($current_page) && $current_page === 'admin');
 $is_profile_page   = (isset($current_page) && $current_page === 'profile');
 $is_minimal_header = (isset($current_page) && in_array($current_page, ['order_confirmation', 'checkout'], true));
+
+// Notification bell: which feed to show (customer vs admin) is purely a
+// function of which page we're on and whether someone's logged in — kept
+// self-contained here (like is_page_hidden() elsewhere) so no other page
+// needs to be touched to get this feature.
+$notif_role = null;
+$notif_initial_unread = 0;
+if (isset($pdo) && isset($_SESSION['u_id'])) {
+    if ($is_admin_page && ($_SESSION['user_role'] ?? '') === 'admin') {
+        $notif_role = 'admin';
+        $notif_initial_unread = get_unread_count_for_admin($pdo);
+    } elseif (!$is_admin_page) {
+        $notif_role = 'user';
+        $notif_initial_unread = get_unread_count_for_user($pdo, $_SESSION['u_id']);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -17,6 +34,7 @@ $is_minimal_header = (isset($current_page) && in_array($current_page, ['order_co
   <link rel="stylesheet" href="../assets/css/styles.css">
   <link rel="stylesheet" href="../assets/css/profile.css">
   <link rel="stylesheet" href="../assets/css/chat-widget.css">
+  <link rel="stylesheet" href="../assets/css/notifications.css">
 </head>
 <body>
 
@@ -85,8 +103,33 @@ $is_minimal_header = (isset($current_page) && in_array($current_page, ['order_co
 
             <!-- Cart Button (Visible on both Standard & Profile Pages) -->
             <button type="button" class="btn btn-outline cart-nav-btn" data-open-cart>
-              <?php icon('cart'); ?> Cart <span class="cart-count-badge" style="<?= ($cart_count ?? 0) === 0 ? 'display:none;' : '' ?>"><?= $cart_count ?? 0 ?></span>
+              <?php icon('cart'); ?><span class="cart-count-badge" style="<?= ($cart_count ?? 0) === 0 ? 'display:none;' : '' ?>"><?= $cart_count ?? 0 ?></span>
             </button>
+          <?php endif; ?>
+
+          <?php if ($notif_role): ?>
+            <!-- Notification Bell (Customers get chat replies + order
+                 updates; Admins get new orders + conversations needing
+                 attention) -->
+            <div class="notif-widget" id="notifWidget">
+              <button type="button" class="btn btn-outline notif-bell-btn" id="notifBellBtn"
+                      aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span class="notif-count-badge" id="notifCountBadge" style="<?= $notif_initial_unread === 0 ? 'display:none;' : '' ?>"><?= $notif_initial_unread > 99 ? '99+' : $notif_initial_unread ?></span>
+              </button>
+              <div class="notif-panel" id="notifPanel">
+                <div class="notif-panel-header">
+                  <span>Notifications</span>
+                  <button type="button" class="notif-mark-all-btn" id="notifMarkAllBtn">Mark all read</button>
+                </div>
+                <div class="notif-list" id="notifList">
+                  <p class="notif-empty">Loading…</p>
+                </div>
+              </div>
+            </div>
           <?php endif; ?>
 
           <?php if ($is_profile_page): ?>
@@ -110,6 +153,18 @@ $is_minimal_header = (isset($current_page) && in_array($current_page, ['order_co
 
     </div>
   </header>
+
+  <?php if ($notif_role): ?>
+    <script>
+      window.notifRole = <?= json_encode($notif_role) ?>;
+      // Absolute path so it resolves correctly regardless of which
+      // directory depth the current page lives at (pages/ vs admin/).
+      window.notifEndpoint = <?= $notif_role === 'admin'
+          ? json_encode('/TimosaTech/admin/includes/handlers/admin-notification-handler.php')
+          : json_encode('/TimosaTech/includes/handlers/notification-handler.php') ?>;
+    </script>
+    <script src="../assets/js/notifications.js"></script>
+  <?php endif; ?>
 
   <?php if (!$is_admin_page && (!isset($current_page) || $current_page !== 'contact')): ?>
     <?php require_once __DIR__ . '/../includes/widgets/chat-widget.php'; ?>

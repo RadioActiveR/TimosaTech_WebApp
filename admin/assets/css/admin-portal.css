@@ -460,6 +460,25 @@
 .stock-badge-low      { background: rgba(250, 204, 21, 0.12); color: #facc15; }
 .stock-badge-critical { background: rgba(248, 113, 113, 0.12); color: #f87171; }
 
+/* Panel heading + flash message on one row, message pushed to the far
+   side. Currently only used by the Customer Support Chat tab (delete /
+   return-to-bot flashes), but generic enough for any admin-panel header. */
+.admin-panel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+.admin-panel-title-row h2 {
+  margin: 0;
+}
+.admin-panel-flash-message {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
 /* =========================================
    8. Customer Support Chat (Messenger-style)
    ========================================= */
@@ -543,6 +562,16 @@
   font-size: 0.75rem;
 }
 
+/* The site navbar is position:sticky at top:0 with a 76px-tall container
+   (see .navbar .container in styles.css), so jumping to #adminContentArea
+   via a URL fragment would otherwise land the heading right underneath
+   it, clipped from view. scroll-margin-top leaves clearance for the
+   sticky nav, the same 76px + small-gap offset used by .checkout-summary
+   in styles.css for the same reason. */
+#adminContentArea {
+  scroll-margin-top: 75px;
+}
+
 .support-delete-conversation-form { display: inline; margin: 0; }
 .support-delete-conversation-btn {
   padding: 5px 12px;
@@ -571,9 +600,37 @@
   line-height: 1.4;
   color: #cbd5e1;
 }
-.support-msg-visitor { align-self: flex-start; background: #16283f; }
-.support-msg-bot     { align-self: flex-start; background: #16283f; border: 1px dashed #1a2f4c; }
-.support-msg-admin   { align-self: flex-end; background: var(--accent-cyan); color: #06121c; }
+.support-msg-visitor {
+  align-self: flex-start;
+  background: #16283f;
+  border-left: 3px solid #7a8ba3;
+}
+.support-msg-bot {
+  align-self: flex-start;
+  background: #132a2b;
+  border-left: 3px solid #0adde0;
+}
+.support-msg-admin {
+  align-self: flex-end;
+  background: var(--accent-cyan);
+  color: #06121c;
+}
+
+.support-msg-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 3px;
+}
+.support-msg-visitor .support-msg-label { color: #7a8ba3; }
+.support-msg-bot .support-msg-label     { color: #0adde0; }
+
+.support-msg-text {
+  display: block;
+  white-space: pre-wrap;
+}
 
 .support-reply-form {
   display: flex;

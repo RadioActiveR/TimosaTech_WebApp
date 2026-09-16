@@ -1,5 +1,8 @@
-<!-- INFO: .gitignore -->
+# INFO: .gitignore
 
 .env
 schema.sql
 timosatech_db.sql
+
+storage/*
+!storage/.gitkeep

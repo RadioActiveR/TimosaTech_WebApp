@@ -3,7 +3,8 @@
 /* INFO: Linked Files:
 
     config/db.php
-    includes/user-profile-functions.php
+    includes/functions/user-profile-functions.php
+    includes/handlers/profile-handler.php
 
 */
 
@@ -26,43 +27,22 @@ $user_name    = $_SESSION['username'] ?? '';
 
 $u_id = $_SESSION['u_id'];
 $page_hidden = is_page_hidden($pdo, 'profile');
-$success_msg = '';
-$error_msg = '';
-$username_success_msg = '';
-$username_error_msg = '';
 
 $page_title = "Timosa Tech - Profile";
 $current_page = 'profile';
 
-// Handle Profile Updates
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_profile') {
-    $profile_data = [
-        'full_name'     => trim($_POST['full_name'] ?? ''),
-        'phone_number'  => trim($_POST['phone_number'] ?? ''),
-        'address_line1' => trim($_POST['address_line1'] ?? ''),
-        'address_line2' => trim($_POST['address_line2'] ?? ''),
-        'city'          => trim($_POST['city'] ?? ''),
-        'province'      => trim($_POST['province'] ?? ''),
-        'postal_code'   => trim($_POST['postal_code'] ?? '')
-    ];
+// Flash messages set by includes/handlers/profile-handler.php, read once then cleared
+$success_msg          = $_SESSION['profile_success'] ?? '';
+$error_msg             = $_SESSION['profile_error'] ?? '';
+$username_success_msg = $_SESSION['username_success'] ?? '';
+$username_error_msg   = $_SESSION['username_error'] ?? '';
 
-    if (update_user_profile($pdo, $u_id, $profile_data)) {
-        $success_msg = "Profile updated successfully!";
-    } else {
-        $error_msg = "Failed to update profile. Please try again.";
-    }
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_username') {
-    $result = update_username($pdo, $u_id, $_POST['new_username'] ?? '');
-    if ($result['success']) {
-        $_SESSION['username'] = trim($_POST['new_username']);
-        $user_name = $_SESSION['username'];
-        $username_success_msg = "Username updated successfully!";
-    } else {
-        $username_error_msg = $result['error'];
-    }
-}
+unset(
+    $_SESSION['profile_success'],
+    $_SESSION['profile_error'],
+    $_SESSION['username_success'],
+    $_SESSION['username_error']
+);
 
 // Fetch current user data
 $profile = get_user_profile($pdo, $u_id);
@@ -156,7 +136,7 @@ $orders = get_user_orders($pdo, $u_id);
           <!-- PERSONAL INFORMATION FORM -->
           <section class="profile-section-card">
             <h2>Personal Information</h2>
-            <form action="profile.php" method="POST" class="profile-form">
+            <form action="../includes/handlers/profile-handler.php" method="POST" class="profile-form">
               <input type="hidden" name="action" value="update_profile">
 
               <div class="form-group">
@@ -212,15 +192,15 @@ $orders = get_user_orders($pdo, $u_id);
               <div class="alert alert-danger"><?= htmlspecialchars($username_error_msg) ?></div>
             <?php endif; ?>
 
-            <form action="profile.php" method="POST" class="profile-form">
+            <form action="../includes/handlers/profile-handler.php" method="POST" class="profile-form">
               <input type="hidden" name="action" value="update_username">
 
               <div class="form-group">
                 <label for="new_username">Username</label>
                 <input type="text" id="new_username" name="new_username" class="form-control"
                        value="<?= htmlspecialchars($profile['username']) ?>"
-                       required minlength="3" maxlength="30" pattern="[A-Za-z0-9_]+"
-                       title="Letters, numbers, and underscores only">
+                       required minlength="3" maxlength="20" pattern="[A-Za-z][A-Za-z0-9_]*"
+                       title="Must start with a letter, then only letters, numbers, and underscores">
               </div>
 
               <button type="submit" class="btn btn-outline">Update Username</button>
@@ -302,9 +282,32 @@ $orders = get_user_orders($pdo, $u_id);
 
   <script>window.isLoggedIn = <?= $is_logged_in ? 'true' : 'false' ?>;</script>
   <script>
+    (function () {
+      var key = 'profileEntryReferrer';
+      var ref = document.referrer;
+      var cameFromProfileFlow = ref && (
+        ref.indexOf('/pages/profile.php') !== -1 ||
+        ref.indexOf('/includes/handlers/profile-handler.php') !== -1
+      );
+
+      // Only (re)store the referrer when this load did NOT come from
+      // profile.php or its handler — i.e. this is a genuine fresh visit,
+      // not the redirect-back that follows a form submission. This keeps
+      // the "true" entry point stable no matter how many times the user
+      // saves changes before clicking Back.
+      if (!cameFromProfileFlow) {
+        if (ref && ref.indexOf(window.location.origin) === 0) {
+          sessionStorage.setItem(key, ref);
+        } else {
+          sessionStorage.removeItem(key);
+        }
+      }
+    })();
+
     document.getElementById('profileBackBtn')?.addEventListener('click', function () {
-      if (document.referrer && document.referrer.indexOf(window.location.origin) === 0 && window.history.length > 1) {
-        window.history.back();
+      var storedRef = sessionStorage.getItem('profileEntryReferrer');
+      if (storedRef) {
+        window.location.href = storedRef;
       } else {
         window.location.href = 'homepage.php';
       }

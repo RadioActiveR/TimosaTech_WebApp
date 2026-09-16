@@ -2,10 +2,17 @@
 require_once __DIR__ . '/../../../includes/functions/product-image-functions.php';
 
 // Absolute path to the folder product photos are saved into.
-define('PRODUCT_IMAGE_DIR', __DIR__ . '/../../../assets/images/products/');
+//
+// Moved out of assets/ into storage/ — assets/ is for static files that
+// ship with the codebase (CSS, JS, seed images); storage/ is for anything
+// generated or uploaded at runtime, which has a different lifecycle (needs
+// to persist across deploys, typically gets .gitignore'd, may need its own
+// backup/permission handling). Product photos are user-uploaded, so they
+// belong here, not in assets/.
+define('PRODUCT_IMAGE_DIR', __DIR__ . '/../../../storage/products/');
 // The same location, but as the DB-stored relative path (what
 // get_product_image_urls() prefixes with '../').
-define('PRODUCT_IMAGE_DB_PREFIX', 'assets/images/products/');
+define('PRODUCT_IMAGE_DB_PREFIX', 'storage/products/');
 
 const ALLOWED_PRODUCT_IMAGE_TYPES = [
     'image/jpeg' => 'jpg',

@@ -93,6 +93,9 @@
   border-bottom-right-radius: 2px;
 }
 
+/* Bot (AI) and human-rep replies share the same base shape but get
+   distinct accent colors + labels so a visitor can tell at a glance
+   which one they're talking to. */
 .chat-msg-bot,
 .chat-msg-admin {
   align-self: flex-start;
@@ -100,6 +103,48 @@
   color: var(--text-primary);
   border: 1px solid var(--bg-card-border);
   border-bottom-left-radius: 2px;
+}
+.chat-msg-bot   { border-left: 3px solid var(--accent-cyan); }
+.chat-msg-admin { border-left: 3px solid #4ade80; }
+
+.chat-msg-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 3px;
+}
+.chat-msg-bot .chat-msg-label   { color: var(--accent-cyan); }
+.chat-msg-admin .chat-msg-label { color: #4ade80; }
+
+.chat-msg-text {
+  display: block;
+  white-space: pre-wrap;
+}
+
+/* "Stella is typing" indicator — same shape as a bot bubble, dots
+   instead of text. */
+.chat-typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+.chat-typing-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  display: inline-block;
+  animation: chatTypingBounce 1.2s infinite ease-in-out;
+}
+.chat-typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+.chat-typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes chatTypingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30%           { transform: translateY(-4px); opacity: 1; }
 }
 
 .chat-msg-system {

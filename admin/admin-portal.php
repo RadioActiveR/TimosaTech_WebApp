@@ -263,6 +263,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if ($conversation_id > 0 && $reply_message !== '') {
             assign_conversation($pdo, $conversation_id, $_SESSION['u_id']);
             add_chat_message($pdo, $conversation_id, 'admin', $_SESSION['u_id'], $reply_message);
+
+            $conversation = get_conversation($pdo, $conversation_id);
+            if ($conversation) {
+                notify_customer_of_chat_reply($pdo, $conversation, $reply_message);
+            }
         } else {
             $_SESSION['admin_flash_error'] = "Reply message can't be empty.";
         }
@@ -270,9 +275,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         // Redirect (Post/Redirect/Get) so refreshing the page never
         // resubmits this reply — this was causing the last message sent
         // to duplicate itself on reload.
-        // Anchor back to the support section (instead of the very top of
-        // the page) so admins land back where the conversation is.
-        header("Location: admin-portal.php?tab=support&conversation_id=" . $conversation_id . "#supportSection");
+        // Anchor back to the open conversation panel (instead of the very
+        // top of the page, or just the top of the support section on a
+        // narrow window) so admins land right back on the conversation.
+        header("Location: admin-portal.php?tab=support&conversation_id=" . $conversation_id . "#adminContentArea");
         exit;
 
     } elseif ($_POST['action'] === 'return_to_bot') {
@@ -282,7 +288,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $_SESSION['admin_flash_message'] = "Conversation handed back to the bot.";
         }
 
-        header("Location: admin-portal.php?tab=support&conversation_id=" . $conversation_id . "#supportSection");
+        header("Location: admin-portal.php?tab=support&conversation_id=" . $conversation_id . "#adminContentArea");
         exit;
 
     } elseif ($_POST['action'] === 'delete_conversation') {
@@ -295,7 +301,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         // No conversation_id in the redirect — it no longer exists, so
         // just land back on the (now conversation-less) support tab.
-        header("Location: admin-portal.php?tab=support#supportSection");
+        header("Location: admin-portal.php?tab=support#adminContentArea");
         exit;
     }
 }
@@ -411,6 +417,7 @@ if ($active_tab === 'support') {
         $selected_conversation = get_conversation($pdo, $selected_conversation_id);
         if ($selected_conversation) {
             $selected_messages = get_conversation_messages($pdo, $selected_conversation_id);
+            mark_admin_notifications_read_for_conversation($pdo, $selected_conversation_id);
         }
     }
 }
@@ -444,7 +451,7 @@ if ($active_tab === 'support') {
       <?php endforeach; ?>
     </nav>
 
-    <main class="admin-content-area">
+    <main class="admin-content-area" id="adminContentArea">
       <?php if ($active_tab === 'products'): ?>
         <section class="admin-panel">
           <h2>Products Management</h2>
@@ -1065,10 +1072,12 @@ if ($active_tab === 'support') {
         </section>
 
       <?php elseif ($active_tab === 'support'): ?>
-        <section class="admin-panel" id="supportSection">
-          <h2>Customer Support Chat</h2>
-          <?php if ($message): ?><p style="color: #0ADDEE; margin-bottom: 15px;"><?= htmlspecialchars($message) ?></p><?php endif; ?>
-          <?php if ($error): ?><p style="color: #f87171; margin-bottom: 15px;"><?= htmlspecialchars($error) ?></p><?php endif; ?>
+        <section class="admin-panel">
+          <div class="admin-panel-title-row">
+            <h2>Customer Support Chat</h2>
+            <?php if ($message): ?><p class="admin-panel-flash-message" style="color: #0ADDEE;"><?= htmlspecialchars($message) ?></p><?php endif; ?>
+            <?php if ($error): ?><p class="admin-panel-flash-message" style="color: #f87171;"><?= htmlspecialchars($error) ?></p><?php endif; ?>
+          </div>
 
           <div class="support-chat-layout">
             <aside class="support-contacts-list">
@@ -1076,7 +1085,7 @@ if ($active_tab === 'support') {
                 <p class="admin-panel-placeholder">No conversations yet.</p>
               <?php else: ?>
                 <?php foreach ($all_conversations as $conv): ?>
-                  <a href="?tab=support&conversation_id=<?= $conv['conversation_id'] ?>"
+                  <a href="?tab=support&conversation_id=<?= $conv['conversation_id'] ?>#adminContentArea"
                      class="support-contact-row <?= $selected_conversation_id === (int) $conv['conversation_id'] ? 'active' : '' ?>">
                     <div class="support-contact-top">
                       <span class="support-contact-name"><?= htmlspecialchars(conversation_display_name($conv)) ?></span>
@@ -1097,16 +1106,15 @@ if ($active_tab === 'support') {
                 <div class="support-chat-header">
                   <strong><?= htmlspecialchars(conversation_display_name($selected_conversation)) ?></strong>
                   <div class="support-chat-header-right">
-                    <span class="status-badge support-status-<?= htmlspecialchars($selected_conversation['status']) ?>">
+                    <span id="supportChatStatusBadge" class="status-badge support-status-<?= htmlspecialchars($selected_conversation['status']) ?>">
                       <?= htmlspecialchars(chat_status_label($selected_conversation['status'])) ?>
                     </span>
-                    <?php if ($selected_conversation['status'] !== 'bot'): ?>
-                      <form method="post" class="support-return-to-bot-form">
-                        <input type="hidden" name="action" value="return_to_bot">
-                        <input type="hidden" name="conversation_id" value="<?= $selected_conversation['conversation_id'] ?>">
-                        <button type="submit" class="btn btn-outline support-return-to-bot-btn">Return to Bot</button>
-                      </form>
-                    <?php endif; ?>
+                    <form method="post" class="support-return-to-bot-form" id="supportReturnToBotForm"
+                          <?= $selected_conversation['status'] === 'bot' ? 'style="display:none"' : '' ?>>
+                      <input type="hidden" name="action" value="return_to_bot">
+                      <input type="hidden" name="conversation_id" value="<?= $selected_conversation['conversation_id'] ?>">
+                      <button type="submit" class="btn btn-outline support-return-to-bot-btn">Return to Bot</button>
+                    </form>
                     <form method="post" class="support-delete-conversation-form"
                           onsubmit="return confirm('Delete this conversation? This can\'t be undone.');">
                       <input type="hidden" name="action" value="delete_conversation">
@@ -1122,7 +1130,12 @@ if ($active_tab === 'support') {
                      data-last-id="<?= $selected_messages ? end($selected_messages)['message_id'] : 0 ?>">
                   <?php foreach ($selected_messages as $msg): ?>
                     <div class="support-msg support-msg-<?= htmlspecialchars($msg['sender_type']) ?>" data-message-id="<?= $msg['message_id'] ?>">
-                      <?= nl2br(htmlspecialchars($msg['message'])) ?>
+                      <?php if ($msg['sender_type'] === 'bot'): ?>
+                        <span class="support-msg-label">Stella (AI)</span>
+                      <?php elseif ($msg['sender_type'] === 'visitor'): ?>
+                        <span class="support-msg-label">Customer</span>
+                      <?php endif; ?>
+                      <span class="support-msg-text"><?= htmlspecialchars($msg['message']) ?></span>
                     </div>
                   <?php endforeach; ?>
                 </div>

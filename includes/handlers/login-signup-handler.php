@@ -6,11 +6,13 @@
 /* INFO: Linked Files:
 
     config/db.php
+    includes/functions/user-profile-functions.php
 
 */
 
 session_start();
 require __DIR__ . '/../../config/db.php';
+require __DIR__ . '/../functions/user-profile-functions.php';
 
 // Only allow same-site, absolute-path redirects (e.g.
 // "/TimosaTech/pages/shop.php"). Never a full URL or a protocol-relative
@@ -58,9 +60,24 @@ if ($action === 'signup') {
     if ($username === '' || $email === '' || $password === '') {
         redirect_back('signup', 'Please fill in all fields.');
     }
+
+    // Username format + reserved-word check (shared with profile updates)
+    $username_error = validate_username($username);
+    if ($username_error !== null) {
+        redirect_back('signup', $username_error);
+    }
+
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         redirect_back('signup', 'Please enter a valid email address.');
     }
+
+    // Only allow common email providers for now
+    $allowed_domains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com'];
+    $email_domain = strtolower(substr(strrchr($email, '@'), 1));
+    if (!in_array($email_domain, $allowed_domains, true)) {
+        redirect_back('signup', 'Please use an email from a supported provider (Gmail, Yahoo, Outlook, Hotmail, or iCloud).');
+    }
+
     if ($password !== $confirm) {
         redirect_back('signup', 'Passwords do not match.');
     }
