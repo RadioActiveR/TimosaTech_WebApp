@@ -168,7 +168,7 @@ $product_images_map = get_product_images_for_ids($pdo, array_column($products, '
       </div>
     </section>
 
-    <!-- SERVICES SECTION -->
+    <!-- SECTION: SERVICES SECTION -->
     <section class="services">
       <div class="container">
         <div class="section-header-center">
@@ -272,7 +272,7 @@ $product_images_map = get_product_images_for_ids($pdo, array_column($products, '
       </div>
     </section>
 
-    <!-- CALL TO ACTION SECTION -->
+    <!-- SECTION: CALL TO ACTION SECTION -->
     <section class="cta-banner">
       <div class="container">
         <h2>Need Technical Support?</h2>

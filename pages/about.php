@@ -16,7 +16,6 @@ $page_hidden  = is_page_hidden($pdo, 'about');
 $page_title = "Timosa Tech - About Us";
 $current_page = 'about';
 
-// TODO: swap these placeholder numbers/dates for the real ones
 $stats = [
     ["value" => "2014",    "label" => "Founded In"],
     ["value" => "12,400+", "label" => "Repairs Completed"],
@@ -97,7 +96,7 @@ $credentials = [
 
 <body>
 
-  <!-- NAVBAR -->
+  <!-- SECTION: NAVBAR -->
   <?php
     require_once __DIR__ . '/../components/header.php';
   ?>
@@ -111,7 +110,7 @@ $credentials = [
     </div>
   <?php else: ?>
 
-    <!-- HERO -->
+    <!-- SECTION: HERO -->
     <section class="about-hero">
       <div class="container about-hero-grid">
         <div class="about-hero-text">
@@ -142,7 +141,7 @@ $credentials = [
       </div>
     </section>
 
-    <!-- STAT STRIP -->
+    <!-- SECTION: STAT STRIP -->
     <section class="about-stat-strip">
       <div class="container">
         <?php foreach ($stats as $stat): ?>
@@ -154,7 +153,7 @@ $credentials = [
       </div>
     </section>
 
-    <!-- STORY & TIMELINE -->
+    <!-- SECTION: STORY & TIMELINE -->
     <section class="about-story">
       <div class="container about-story-grid">
         <div class="about-story-text">
@@ -178,7 +177,7 @@ $credentials = [
       </div>
     </section>
 
-    <!-- HOW WE WORK -->
+    <!-- SECTION: HOW WE WORK -->
     <section class="about-process">
       <div class="container">
         <div class="section-header-center">
@@ -201,7 +200,7 @@ $credentials = [
       </div>
     </section>
 
-    <!-- CREDENTIALS -->
+    <!-- SECTION: CREDENTIALS -->
     <section class="about-credentials">
       <div class="container">
         <div class="section-header-center">
@@ -220,7 +219,7 @@ $credentials = [
       </div>
     </section>
 
-    <!-- CALL TO ACTION -->
+    <!-- SECTION: CALL TO ACTION -->
     <section class="cta-banner">
       <div class="container">
         <h2>Want to see how we work up close?</h2>
@@ -239,7 +238,7 @@ $credentials = [
 
   </main>
 
-  <!-- INFO: FOOTER SECTION -->
+  <!-- SECTION: FOOTER SECTION -->
   <?php
     require_once __DIR__ . '/../components/footer.php';
   ?>

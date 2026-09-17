@@ -18,7 +18,6 @@ require_once __DIR__ . '/../includes/functions/user-profile-functions.php';
 require_once __DIR__ . '/../includes/functions/site-control-functions.php';
 require_once __DIR__ . '/../helpers/icons.php';
 
-// Redirect unauthenticated users
 if (!isset($_SESSION['u_id'])) {
     header("Location: homepage.php");
     exit;
@@ -27,19 +26,15 @@ if (!isset($_SESSION['u_id'])) {
 $u_id = $_SESSION['u_id'];
 $page_hidden = is_page_hidden($pdo, 'checkout');
 
-// Retrieve selected item IDs (passed via POST from cart modal/page or stored in SESSION)
 $selected_cart_ids = $_POST['selected_items'] ?? $_SESSION['checkout_selected_items'] ?? [];
 
 if (empty($selected_cart_ids)) {
-    // If no items selected, redirect back to cart or product view
     header("Location: shop.php");
     exit;
 }
 
-// Store selections in session for resilience across page refreshes
 $_SESSION['checkout_selected_items'] = $selected_cart_ids;
 
-// Fetch selected cart items
 $checkout_items = get_cart_items_by_ids($pdo, $u_id, $selected_cart_ids);
 
 if (empty($checkout_items)) {
@@ -47,7 +42,6 @@ if (empty($checkout_items)) {
     exit;
 }
 
-// Calculate subtotal
 $subtotal = 0;
 foreach ($checkout_items as $item) {
     $subtotal += $item['price'] * $item['quantity'];
@@ -56,7 +50,6 @@ foreach ($checkout_items as $item) {
 $shipping_fee = get_shipping_fee();
 $grand_total  = $subtotal + $shipping_fee;
 
-// Fetch user profile data to auto-fill shipping fields
 $user_profile = get_user_profile($pdo, $u_id);
 
 $default_recipient = $user_profile['full_name'] ?? '';
@@ -67,13 +60,12 @@ $default_city      = $user_profile['city'] ?? '';
 $default_province  = $user_profile['province'] ?? '';
 $default_postal    = $user_profile['postal_code'] ?? '';
 
-// Check for validation errors returned from order-handler.php
 $checkout_error = $_SESSION['checkout_error'] ?? null;
 unset($_SESSION['checkout_error']);
 
 $page_title   = "Timosa Tech - Checkout";
 $current_page = 'checkout';
-$is_logged_in = true; // this page already requires a session, see the redirect above
+$is_logged_in = true;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -89,7 +81,7 @@ $is_logged_in = true; // this page already requires a session, see the redirect 
 </head>
 <body>
 
-  <!-- NAVBAR -->
+  <!-- SECTION: NAVBAR -->
   <?php
     require_once __DIR__ . '/../components/header.php';
   ?>
@@ -119,7 +111,7 @@ $is_logged_in = true; // this page already requires a session, see the redirect 
 
       <form action="../includes/handlers/order-handler.php" method="POST" class="checkout-layout">
 
-        <!-- Left Column: Shipping & Payment Information -->
+        <!-- SECTION: Left Column: Shipping & Payment Information -->
         <div class="checkout-form">
           <div class="checkout-panel">
             <h3>Shipping Address</h3>
@@ -189,7 +181,7 @@ $is_logged_in = true; // this page already requires a session, see the redirect 
           </div>
         </div>
 
-        <!-- Right Column: Order Summary -->
+        <!-- SECTION: Right Column: Order Summary -->
         <aside class="checkout-summary">
           <h3>Order Summary</h3>
 
@@ -211,8 +203,6 @@ $is_logged_in = true; // this page already requires a session, see the redirect 
             <div class="summary-row summary-total"><span>Total</span><span>₱<?= number_format($grand_total, 2) ?></span></div>
           </div>
 
-          <!-- Hidden inputs so order-handler.php receives exactly the items
-               shown here, regardless of what's still in the rest of the cart. -->
           <?php foreach ($checkout_items as $item): ?>
             <input type="hidden" name="selected_items[]" value="<?= htmlspecialchars($item['cart_item_id']) ?>">
           <?php endforeach; ?>
@@ -225,7 +215,7 @@ $is_logged_in = true; // this page already requires a session, see the redirect 
   <?php endif; ?>
   </main>
 
-  <!-- INFO: FOOTER SECTION -->
+  <!-- SECTION: FOOTER SECTION -->
   <?php
     require_once __DIR__ . '/../components/footer.php';
   ?>

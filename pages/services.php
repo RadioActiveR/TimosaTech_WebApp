@@ -35,7 +35,7 @@
 
 <body>
 
-  <!-- NAVBAR -->
+  <!-- SECTION: NAVBAR -->
   <?php 
     require_once __DIR__ . '/../components/header.php'; 
   ?>
@@ -64,7 +64,7 @@
         </div>
       </section>
 
-      <!-- REPAIR & MAINTENANCE -->
+      <!-- SECTION: REPAIR & MAINTENANCE -->
       <section class="svc-block" id="repair">
         <div class="container">
           <div class="svc-content">
@@ -90,7 +90,7 @@
         </div>
       </section>
 
-      <!-- PRINTING SERVICES -->
+      <!-- SECTION: PRINTING SERVICES -->
       <section class="svc-block reverse" id="printing">
         <div class="container">
           <div class="svc-content">
@@ -116,7 +116,7 @@
         </div>
       </section>
 
-      <!-- NETWORKING & IT SERVICES -->
+      <!-- SECTION: NETWORKING & IT SERVICES -->
       <section class="svc-block" id="networking">
         <div class="container">
           <div class="svc-content">
@@ -142,7 +142,7 @@
         </div>
       </section>
 
-      <!-- ONLINE CONSULTATION -->
+      <!-- SECTION: ONLINE CONSULTATION -->
       <section class="svc-block reverse" id="consultation">
         <div class="container">
           <div class="svc-content">
@@ -171,7 +171,7 @@
         </div>
       </section>
 
-      <!-- NOT SURE WHICH SERVICE -->
+      <!-- SECTION: NOT SURE WHICH SERVICE -->
       <section class="svc-help-note">
         <div class="container">
           <h3>Not sure which service you need?</h3>
@@ -180,7 +180,7 @@
         </div>
       </section>
 
-      <!-- CALL TO ACTION -->
+      <!-- SECTION: CALL TO ACTION -->
       <section class="cta-banner">
         <div class="container">
           <h2>Ready to Upgrade Your Infrastructure?</h2>
@@ -197,7 +197,7 @@
 
     <?php endif; ?>
 
-  <!-- INFO: FOOTER SECTION -->
+  <!-- SECTION: FOOTER SECTION -->
   <?php 
     require_once __DIR__ . '/../components/footer.php'; 
   ?>

@@ -1,4 +1,4 @@
-<!-- UNFINISHED! WORK IN PROGRESS -->
+<!-- INFO: contact page -->
 
 <?php
 
@@ -19,12 +19,6 @@
     $page_title = "Timosa Tech - Contact";
     $current_page = 'contact';
 
-    // The written contact form feeds into the exact same conversation
-    // system as the live chat, rather than going nowhere: it shows up in
-    // the admin dashboard's Customer Support Chat tab like any other
-    // conversation. Since a form submission isn't something the visitor is
-    // waiting on in real time, it skips the bot and goes straight into the
-    // "needs a human" queue instead of getting an auto-reply.
     $contact_submitted = false;
     $contact_form_error = '';
 
@@ -85,7 +79,7 @@
 
 <body>
 
-  <!-- NAVBAR -->
+  <!-- SECTION: NAVBAR -->
   <?php 
     require_once __DIR__ . '/../components/header.php'; 
   ?>
@@ -99,7 +93,7 @@
       </div>
     <?php else: ?>
 
-      <!-- HERO -->
+      <!-- SECTION: HERO -->
       <section class="contact-hero">
         <div class="container">
           <span class="section-tag">GET IN TOUCH</span>
@@ -109,10 +103,10 @@
       </section>
 
       <div class="container contact-layout">
-        <!-- LIVE CHAT (bigger than the floating widget) -->
+        <!-- INFO: LIVE CHAT (bigger than the floating widget) -->
         <?php include __DIR__ . '/../includes/widgets/contact-chat-panel.php'; ?>
 
-        <!-- CONTACT INFO -->
+        <!-- SECTION: CONTACT INFO -->
         <div>
           <div class="contact-info-card">
             <h3>Contact Details</h3>
@@ -171,7 +165,7 @@
         </div>
       </div>
 
-      <!-- WRITTEN MESSAGE (secondary option to live chat) -->
+      <!-- SECTION: WRITTEN MESSAGE (secondary option to live chat) -->
       <section class="contact-form-section">
         <div class="container">
           <div class="section-header-center">
@@ -229,7 +223,7 @@
         </div>
       </section>
 
-      <!-- CALL TO ACTION -->
+      <!-- SECTION: CALL TO ACTION -->
       <section class="cta-banner">
         <div class="container">
           <h2>Not sure which service you need?</h2>
@@ -246,7 +240,7 @@
 
     <?php endif; ?>
 
-  <!-- INFO: FOOTER SECTION -->
+  <!-- SECTION: FOOTER SECTION -->
   <?php 
     require_once __DIR__ . '/../components/footer.php'; 
   ?>

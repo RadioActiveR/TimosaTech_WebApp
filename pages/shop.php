@@ -23,7 +23,6 @@ $page_hidden  = is_page_hidden($pdo, 'shop');
 $page_title = "Timosa Tech - Store";
 $current_page = 'shop';
 
-// Category Filter Logic
 $selected_category = $_GET['category'] ?? 'all';
 $search_query      = trim($_GET['search'] ?? '');
 
@@ -77,7 +76,7 @@ $categories = [
 </head>
 <body>
 
-  <!-- NAVBAR -->
+  <!-- SECTION: NAVBAR -->
   <?php 
     require_once __DIR__ . '/../components/header.php'; 
   ?>
@@ -104,7 +103,8 @@ $categories = [
     </div>
 
     <div class="shop-layout">
-      <!-- Sidebar Categories -->
+
+      <!-- SECTION: Sidebar Categories -->
       <aside class="shop-sidebar">
         <h3>Categories</h3>
         <ul class="category-list">
@@ -179,7 +179,7 @@ $categories = [
   <script>window.isLoggedIn = <?= $is_logged_in ? 'true' : 'false' ?>;</script>
   <script src="../assets/js/product-modal.js"></script>
 
-  <!-- INFO: FOOTER SECTION -->
+  <!-- SECTION: FOOTER SECTION -->
   <?php 
     require_once __DIR__ . '/../components/footer.php'; 
   ?>

@@ -25,7 +25,6 @@ $is_admin     = ($_SESSION['user_role'] ?? '') === 'admin';
 $cart_count   = get_cart_count($pdo, $u_id);
 $order_id     = $_GET['order_id'] ?? '';
 
-// Scoped to u_id so a user can't view someone else's order by guessing the order_id
 $stmt = $pdo->prepare("SELECT * FROM orders WHERE order_id = ? AND u_id = ?");
 $stmt->execute([$order_id, $u_id]);
 $order = $stmt->fetch();
@@ -42,7 +41,6 @@ $order_items = $stmt->fetchAll();
 $page_title   = "Timosa Tech - Order Confirmation";
 $current_page = 'order_confirmation';
 
-// Keep this a distraction-free confirmation screen — logo only, no nav/cart/profile
 $minimal_header = true;
 
 $status_labels = [
@@ -67,7 +65,7 @@ $status_labels = [
 </head>
 <body>
 
-  <!-- NAVBAR -->
+  <!-- SECTION: NAVBAR -->
   <?php
     require_once __DIR__ . '/../components/header.php';
   ?>
@@ -134,7 +132,7 @@ $status_labels = [
   <?php endif; ?>
   </main>
 
-  <!-- INFO: FOOTER SECTION -->
+  <!-- SECTION: FOOTER SECTION -->
   <?php
     require_once __DIR__ . '/../components/footer.php';
   ?>

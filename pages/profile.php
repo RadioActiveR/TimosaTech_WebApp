@@ -15,7 +15,6 @@ require_once __DIR__ . '/../includes/functions/site-control-functions.php';
 require_once __DIR__ . '/../includes/functions/cart-functions.php';
 require_once __DIR__ . '/../helpers/icons.php';
 
-// Redirect to home if not logged in
 if (!isset($_SESSION['u_id'])) {
     header('Location: ../index.php');
     exit;
@@ -31,7 +30,6 @@ $page_hidden = is_page_hidden($pdo, 'profile');
 $page_title = "Timosa Tech - Profile";
 $current_page = 'profile';
 
-// Flash messages set by includes/handlers/profile-handler.php, read once then cleared
 $success_msg          = $_SESSION['profile_success'] ?? '';
 $error_msg             = $_SESSION['profile_error'] ?? '';
 $username_success_msg = $_SESSION['username_success'] ?? '';
@@ -44,7 +42,6 @@ unset(
     $_SESSION['username_error']
 );
 
-// Fetch current user data
 $profile = get_user_profile($pdo, $u_id);
 $orders = get_user_orders($pdo, $u_id);
 ?>
@@ -66,12 +63,12 @@ $orders = get_user_orders($pdo, $u_id);
 </head>
 <body>
 
-  <!-- NAVBAR -->
+  <!-- SECTION: NAVBAR -->
   <?php 
     require_once __DIR__ . '/../components/header.php'; 
   ?>
 
-  <!-- MAIN CONTENT -->
+  <!-- SECTION: MAIN CONTENT -->
   <main class="profile-main">
   <?php if ($page_hidden): ?>
     <div class="center-container">
@@ -102,7 +99,7 @@ $orders = get_user_orders($pdo, $u_id);
 
       <div class="profile-grid">
         
-        <!-- SIDEBAR: USER INFO -->
+        <!-- SECTION: SIDEBAR: USER INFO -->
         <aside class="profile-sidebar">
           <div class="profile-card">
             <div class="profile-avatar-circle">
@@ -130,10 +127,10 @@ $orders = get_user_orders($pdo, $u_id);
           </div>
         </aside>
 
-        <!-- MAIN AREA: FORM & ORDERS -->
+        <!-- SECTION: MAIN AREA: FORM & ORDERS -->
         <div class="profile-content-area">
           
-          <!-- PERSONAL INFORMATION FORM -->
+          <!-- SECTION: PERSONAL INFORMATION FORM -->
           <section class="profile-section-card">
             <h2>Personal Information</h2>
             <form action="../includes/handlers/profile-handler.php" method="POST" class="profile-form">
@@ -180,7 +177,7 @@ $orders = get_user_orders($pdo, $u_id);
             </form>
           </section>
 
-          <!-- USERNAME -->
+          <!-- SECTION: USERNAME -->
           <section class="profile-section-card">
             <h2>Change Username</h2>
 
@@ -275,7 +272,7 @@ $orders = get_user_orders($pdo, $u_id);
   <?php endif; ?>
   </main>
 
-  <!-- INFO: FOOTER SECTION -->
+  <!-- SECTION: FOOTER SECTION -->
   <?php 
     require_once __DIR__ . '/../components/footer.php'; 
   ?>
@@ -290,11 +287,6 @@ $orders = get_user_orders($pdo, $u_id);
         ref.indexOf('/includes/handlers/profile-handler.php') !== -1
       );
 
-      // Only (re)store the referrer when this load did NOT come from
-      // profile.php or its handler — i.e. this is a genuine fresh visit,
-      // not the redirect-back that follows a form submission. This keeps
-      // the "true" entry point stable no matter how many times the user
-      // saves changes before clicking Back.
       if (!cameFromProfileFlow) {
         if (ref && ref.indexOf(window.location.origin) === 0) {
           sessionStorage.setItem(key, ref);

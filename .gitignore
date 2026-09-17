@@ -4,5 +4,5 @@
 schema.sql
 timosatech_db.sql
 
-storage/*
-!storage/.gitkeep
+storage/products/*
+!storage/products/.gitkeep
