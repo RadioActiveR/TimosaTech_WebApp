@@ -29,12 +29,13 @@ $current_page = 'admin';
 $user_name = $_SESSION['username'] ?? 'Admin';
 
 $admin_tabs = [
-    'overview'       => 'Overview',
+    'overview'      => 'Overview',
     'site_controls' => 'Site Controls',
-    'tickets'       => 'Tickets',
-    'orders'        => 'Orders',
-    'products'      => 'Products',
+    'users'         => 'Users',
     'support'       => 'Customer Support Chat',
+    'orders'        => 'Orders',
+    'tickets'       => 'Tickets',
+    'products'      => 'Products',
     'crud_log'      => 'CRUD Log'
 ];
 
@@ -1136,6 +1137,7 @@ if ($active_tab === 'support') {
                         <span class="support-msg-label">Customer</span>
                       <?php endif; ?>
                       <span class="support-msg-text"><?= htmlspecialchars($msg['message']) ?></span>
+                      <span class="support-msg-time"><?= date('g:i A', strtotime($msg['created_at'])) ?></span>
                     </div>
                   <?php endforeach; ?>
                 </div>

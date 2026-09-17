@@ -1,23 +1,20 @@
 <?php
-/* INFO: Handles both the Login form and the Sign Up form
- * (distinguished by the hidden "action" field).
+
+/* INFO: Login / Sign Up Handler
+ *
+ * INFO: Linked Files:
+ * 
+ * NONE
+ *
+ * INFO: Is used by:
+ * 
+ * includes/modals/login-signup-modal.php
  */
-
-/* INFO: Linked Files:
-
-    config/db.php
-    includes/functions/user-profile-functions.php
-
-*/
 
 session_start();
 require __DIR__ . '/../../config/db.php';
 require __DIR__ . '/../functions/user-profile-functions.php';
 
-// Only allow same-site, absolute-path redirects (e.g.
-// "/TimosaTech/pages/shop.php"). Never a full URL or a protocol-relative
-// one ("//evil.com") — redirect_to comes from a hidden form field that a
-// visitor's browser controls, so it can't be trusted blindly.
 function is_safe_redirect(string $path): bool {
     return $path !== ''
         && str_starts_with($path, '/TimosaTech/')
@@ -31,7 +28,6 @@ function redirect_back(string $tab, ?string $error = null): void {
     }
     $_SESSION['auth_tab'] = $tab;
     
-    // Preserve old inputs (excluding sensitive password fields)
     $_SESSION['auth_old_input'] = [
         'username'    => trim($_POST['username'] ?? ''),
         'email'       => trim($_POST['email'] ?? ''),
@@ -45,12 +41,10 @@ function redirect_back(string $tab, ?string $error = null): void {
 
 $action = $_POST['action'] ?? '';
 
-// Where to send the user after a successful login/signup. Falls back to
-// the homepage if nothing valid was submitted (e.g. JS disabled).
 $redirect_to_input = trim($_POST['redirect_to'] ?? '');
 $safe_redirect = is_safe_redirect($redirect_to_input) ? $redirect_to_input : '/TimosaTech/pages/homepage.php';
 
-/* ---------------- Sign Up ---------------- */
+/* ---------------- SECTION: Sign Up ---------------- */
 if ($action === 'signup') {
     $username = trim($_POST['username'] ?? '');
     $email    = trim($_POST['email'] ?? '');
@@ -61,7 +55,6 @@ if ($action === 'signup') {
         redirect_back('signup', 'Please fill in all fields.');
     }
 
-    // Username format + reserved-word check (shared with profile updates)
     $username_error = validate_username($username);
     if ($username_error !== null) {
         redirect_back('signup', $username_error);
@@ -71,7 +64,6 @@ if ($action === 'signup') {
         redirect_back('signup', 'Please enter a valid email address.');
     }
 
-    // Only allow common email providers for now
     $allowed_domains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com'];
     $email_domain = strtolower(substr(strrchr($email, '@'), 1));
     if (!in_array($email_domain, $allowed_domains, true)) {
@@ -85,27 +77,23 @@ if ($action === 'signup') {
         redirect_back('signup', 'Password must be at least 8 characters.');
     }
 
-    // Check if email or username is already taken
     $stmt = $pdo->prepare("SELECT u_id FROM users WHERE email = ? OR username = ?");
     $stmt->execute([$email, $username]);
     if ($stmt->fetch()) {
         redirect_back('signup', 'An account with that email or username already exists.');
     }
 
-    // Generate unique string ID for u_id
     $u_id = uniqid('usr_', true);
     $hash = password_hash($password, PASSWORD_DEFAULT);
 
     try {
         $pdo->beginTransaction();
 
-        // 1. Insert into users table
         $stmt = $pdo->prepare(
             "INSERT INTO users (u_id, username, email, password_hash, role) VALUES (?, ?, ?, ?, 'user')"
         );
         $stmt->execute([$u_id, $username, $email, $hash]);
 
-        // 2. Initialize empty row in user_profiles table
         $stmtProfile = $pdo->prepare(
             "INSERT INTO user_profiles (u_id) VALUES (?)"
         );
@@ -125,7 +113,7 @@ if ($action === 'signup') {
     exit;
 }
 
-/* ---------------- Log In ---------------- */
+/* ---------------- SECTION: Log In ---------------- */
 if ($action === 'login') {
     $identity = trim($_POST['identity'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -134,7 +122,6 @@ if ($action === 'login') {
         redirect_back('login', 'Please enter your email/username and password.');
     }
 
-    // Retrieve user matching either email OR username
     $stmt = $pdo->prepare("SELECT u_id, username, password_hash, role FROM users WHERE email = ? OR username = ?");
     $stmt->execute([$identity, $identity]);
     $user = $stmt->fetch();
@@ -147,8 +134,6 @@ if ($action === 'login') {
     $_SESSION['username']  = $user['username'];
     $_SESSION['user_role'] = $user['role'];
 
-    // Admins always land in the dashboard, regardless of where the login
-    // modal was opened from — redirect_to only applies to regular users.
     if ($user['role'] === 'admin') {
         header("Location: /TimosaTech/admin/admin-portal.php");
     } else {

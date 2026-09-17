@@ -53,6 +53,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // only right-aligned, solid-cyan bubbles).
   const SUPPORT_MSG_LABELS = { bot: 'Stella (AI)', visitor: 'Customer' };
 
+  // MySQL DATETIME string ("2026-09-16 10:23:00") -> "10:23 AM", matching
+  // the format used by the PHP-rendered messages (date('g:i A', ...)).
+  function formatMsgTime(dateStr) {
+    const d = dateStr ? new Date(dateStr.replace(' ', 'T')) : new Date();
+    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+
   function renderMessage(msg) {
     // TEMP DIAGNOSTIC — remove once the duplicate is confirmed fixed.
     console.log('[chat-debug] renderMessage called', {
@@ -87,6 +94,11 @@ document.addEventListener('DOMContentLoaded', () => {
     textEl.className = 'support-msg-text';
     textEl.textContent = msg.message;
     el.appendChild(textEl);
+
+    const timeEl = document.createElement('span');
+    timeEl.className = 'support-msg-time';
+    timeEl.textContent = formatMsgTime(msg.created_at);
+    el.appendChild(timeEl);
 
     container.appendChild(el);
     lastId = Math.max(lastId, Number(msg.message_id));

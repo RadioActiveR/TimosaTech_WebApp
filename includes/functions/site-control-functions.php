@@ -207,3 +207,20 @@ function are_all_widgets_hidden(PDO $pdo): bool {
     }
     return !in_array(false, $visibility, true);
 }
+
+// A single cheap value that changes whenever ANY row in
+// site_page_visibility is inserted or updated — an admin flipping any
+// individual page/modal/widget toggle, or one of the "hide all" bulk
+// switches, both touch this. Used by a public, unauthenticated endpoint
+// so a visitor's browser can detect "something changed" with one small
+// query, without needing to poll every individual key, and reload
+// automatically instead of continuing to show stale content (or a stale
+// Content Veil) until they manually refresh.
+function get_site_controls_version(PDO $pdo): string {
+    try {
+        $stmt = $pdo->query("SELECT MAX(updated_at) FROM site_page_visibility");
+        return (string) ($stmt->fetchColumn() ?: 'none');
+    } catch (PDOException $e) {
+        return 'none';
+    }
+}

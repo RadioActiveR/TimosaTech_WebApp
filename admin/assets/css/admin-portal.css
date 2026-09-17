@@ -632,6 +632,14 @@
   white-space: pre-wrap;
 }
 
+.support-msg-time {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.68rem;
+  opacity: 0.65;
+  text-align: right;
+}
+
 .support-reply-form {
   display: flex;
   gap: 10px;
@@ -654,6 +662,8 @@
 }
 .support-reply-form button {
   width: 44px;
+  height: 44px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;

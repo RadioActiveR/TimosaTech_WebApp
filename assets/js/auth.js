@@ -2,7 +2,14 @@
 
 /* INFO: Linked Files:
 
-    None
+    NONE
+
+*/
+
+/* INFO: Is used by:
+
+    shop.php
+    homepage.php
 
 */
 
@@ -17,11 +24,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (!overlay) return;
 
-  // Where to send the user after a successful login/signup. Defaults to
-  // wherever they currently are (so the header's Log In button just
-  // brings them back to the page they were on); callers that need a
-  // specific destination — e.g. the add-to-cart guest prompt, which
-  // should always land on the shop page — pass redirectTo explicitly.
   function setRedirectTarget(redirectTo) {
     const target = redirectTo || (window.location.pathname + window.location.search);
     redirectInputs.forEach(input => { input.value = target; });
@@ -34,8 +36,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (target) showTab(target);
   }
 
-  // Exposed so other scripts (cart.js) can open this modal with a
-  // specific post-login destination instead of clicking a real button.
   window.openAuthModal = openModal;
 
   function closeModal() {
@@ -73,7 +73,6 @@ document.addEventListener("DOMContentLoaded", function () {
     btn.addEventListener("click", () => showTab(btn.dataset.target));
   });
 
-  // Password Visibility Toggle
   const togglePassBtns = document.querySelectorAll(".toggle-password");
   togglePassBtns.forEach(btn => {
     btn.addEventListener("click", function () {
@@ -86,7 +85,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Client-Side Signup Password Match Validation
   const signupForm = document.getElementById("signupForm");
   if (signupForm) {
     signupForm.addEventListener("submit", function (e) {

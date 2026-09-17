@@ -1,13 +1,18 @@
 <?php
 $modal_hidden = isset($pdo) && function_exists('is_modal_hidden') && is_modal_hidden($pdo, 'modal_auth');
-/* INFO: Sign Up / Log In modal
- * Included at the bottom of homepage.php. Submits to auth-handler.php,
- * which validates against MySQL and redirects back here. homepage.php
- * reads $auth_error / $auth_tab from the session (set by the handler on
- * failure) BEFORE this file is included, so this file can use them
- * directly to reopen on the right tab and show the right error — this
- * works even with JS disabled.
+
+/* INFO: Sign Up / Log In Modal
+ *
+ * INFO: Linked Files:
+ * 
+ * NONE
+ *
+ * INFO: Is used by:
+ * 
+ * shop.php
+ * homepage.php
  */
+
 $active_tab = $auth_tab ?? 'login';
 $is_open    = isset($auth_tab);
 ?>
@@ -27,7 +32,7 @@ $is_open    = isset($auth_tab);
       <button type="button" class="auth-tab<?= $active_tab === 'signup' ? ' active' : '' ?>" data-target="signup">Sign Up</button>
     </div>
 
-    <!--INFO: Log In -->
+    <!-- SECTION: Log In -->
     <form class="auth-form<?= $active_tab === 'login' ? ' active' : '' ?>" id="loginForm" data-form="login" method="post" action="../includes/handlers/login-signup-handler.php">
       <h2 id="authModalTitle">Welcome back</h2>
       <p class="auth-subtext">Log in to manage orders and support tickets.</p>
@@ -71,7 +76,7 @@ $is_open    = isset($auth_tab);
       <p class="auth-switch">Don't have an account? <button type="button" data-target="signup">Sign up</button></p>
     </form>
 
-    <!--INFO: Sign Up -->
+    <!-- SECTION: Sign Up -->
     <form class="auth-form<?= $active_tab === 'signup' ? ' active' : '' ?>" id="signupForm" data-form="signup" method="post" action="../includes/handlers/login-signup-handler.php">
       <h2>Create your account</h2>
       <p class="auth-subtext">Get faster checkout and order tracking.</p>

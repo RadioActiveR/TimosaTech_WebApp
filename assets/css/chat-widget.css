@@ -123,6 +123,14 @@
   white-space: pre-wrap;
 }
 
+.chat-msg-time {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.68rem;
+  opacity: 0.65;
+  text-align: right;
+}
+
 /* "Stella is typing" indicator — same shape as a bot bubble, dots
    instead of text. */
 .chat-typing-dots {

@@ -83,9 +83,11 @@ function get_or_create_guest_token(): string {
     return $_SESSION['chat_guest_token'];
 }
 
-// Finds this visitor's most recent still-open conversation, or starts a
-// new one. Exactly one of $u_id / $guest_token should be non-null.
-function get_or_create_conversation(PDO $pdo, ?string $u_id, ?string $guest_token): array {
+// Looks up this visitor's most recent still-open conversation without
+// creating one. Returns null if they don't have one yet — e.g. a guest
+// who has opened the chat widget or the Contact page but never actually
+// sent a message. Exactly one of $u_id / $guest_token should be non-null.
+function find_conversation(PDO $pdo, ?string $u_id, ?string $guest_token): ?array {
     if ($u_id) {
         $stmt = $pdo->prepare("
             SELECT * FROM chat_conversations
@@ -102,6 +104,17 @@ function get_or_create_conversation(PDO $pdo, ?string $u_id, ?string $guest_toke
         $stmt->execute([$guest_token]);
     }
     $conversation = $stmt->fetch();
+    return $conversation ?: null;
+}
+
+// Finds this visitor's most recent still-open conversation, or starts a
+// new one. Exactly one of $u_id / $guest_token should be non-null. Only
+// call this at the moment a message is actually being sent — anywhere
+// that shouldn't create a row just from a visitor opening the chat
+// widget (see chat-handler.php's "history" action) should call
+// find_conversation() instead.
+function get_or_create_conversation(PDO $pdo, ?string $u_id, ?string $guest_token): array {
+    $conversation = find_conversation($pdo, $u_id, $guest_token);
     if ($conversation) {
         return $conversation;
     }

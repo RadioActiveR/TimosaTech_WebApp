@@ -30,12 +30,17 @@ function chat_conversation_belongs_to(?array $conversation, ?string $u_id, ?stri
 
 switch ($action) {
     case 'history':
-        $conversation = get_or_create_conversation($pdo, $u_id, $guest_token);
+        // Lookup only — opening the widget or loading the Contact page
+        // shouldn't create a conversation row on its own. That only
+        // happens once the visitor actually sends a message (see 'send'
+        // below). If there's nothing yet, the frontend just shows its
+        // canned greeting locally with no conversation_id.
+        $conversation = find_conversation($pdo, $u_id, $guest_token);
         echo json_encode([
             'success'         => true,
-            'conversation_id' => $conversation['conversation_id'],
-            'status'          => $conversation['status'],
-            'messages'        => get_conversation_messages($pdo, $conversation['conversation_id']),
+            'conversation_id' => $conversation['conversation_id'] ?? null,
+            'status'          => $conversation['status'] ?? 'bot',
+            'messages'        => $conversation ? get_conversation_messages($pdo, $conversation['conversation_id']) : [],
         ]);
         break;
 

@@ -25,6 +25,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Stella (AI) apart from a human rep at a glance.
   const CHAT_MSG_LABELS = { bot: 'Stella (AI)', admin: 'Support Agent' };
 
+  // MySQL DATETIME string ("2026-09-16 10:23:00") -> "10:23 AM". Falls
+  // back to the current time for messages that don't have one yet (the
+  // canned greeting, and the visitor's own optimistic bubble before the
+  // server confirms it).
+  function formatMsgTime(dateStr) {
+    const d = dateStr ? new Date(dateStr.replace(' ', 'T')) : new Date();
+    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+
   function renderMessage(msg) {
     const el = document.createElement('div');
     el.className = 'chat-msg chat-msg-' + msg.sender_type;
@@ -41,6 +50,11 @@ document.addEventListener('DOMContentLoaded', () => {
     textEl.className = 'chat-msg-text';
     textEl.textContent = msg.message;
     el.appendChild(textEl);
+
+    const timeEl = document.createElement('span');
+    timeEl.className = 'chat-msg-time';
+    timeEl.textContent = formatMsgTime(msg.created_at);
+    el.appendChild(timeEl);
 
     messagesEl.appendChild(el);
     if (msg.message_id) {
@@ -92,7 +106,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       scrollToBottom();
-      startPolling();
+      // No conversation exists yet for a brand-new visitor — nothing to
+      // poll until they actually send a message (see the submit handler
+      // below, which starts polling once that first send creates one).
+      if (conversationId) startPolling();
     } catch (err) {
       // Silent fail — widget stays empty until the visitor tries again.
     }

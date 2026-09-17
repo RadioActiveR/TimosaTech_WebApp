@@ -131,7 +131,7 @@ $product_images_map = get_product_images_for_ids($pdo, array_column($products, '
 
 <body>
 
-  <!-- INFO: NAVBAR SECTION -->
+  <!-- SECTION: NAVBAR SECTION -->
   <?php 
     require_once __DIR__ . '/../components/header.php'; 
   ?>
@@ -143,7 +143,7 @@ $product_images_map = get_product_images_for_ids($pdo, array_column($products, '
       <h2 class="hidden-subtext"> Protocol 'CONTENT VEIL' active. Public routing disabled by Administrator. </h2>
     </div>
   <?php else: ?>
-    <!-- HERO SECTION -->
+    <!-- SECTION: HERO SECTION -->
     <section class="hero">
       <div class="container">
         <div class="hero-content">
@@ -188,7 +188,7 @@ $product_images_map = get_product_images_for_ids($pdo, array_column($products, '
       </div>
     </section>
 
-    <!-- FEATURED PRODUCTS SECTION -->
+    <!-- SECTION: FEATURED PRODUCTS SECTION -->
     <section class="featured-products">
       <div class="container">
         <div class="section-header-center">
@@ -252,7 +252,7 @@ $product_images_map = get_product_images_for_ids($pdo, array_column($products, '
       </div>
     </section>
 
-    <!-- WHY CHOOSE US SECTION -->
+    <!-- SECTION: WHY CHOOSE US SECTION -->
     <section class="why-choose-us">
       <div class="container">
         <div class="section-header-center">
@@ -291,7 +291,7 @@ $product_images_map = get_product_images_for_ids($pdo, array_column($products, '
 
   <?php include __DIR__ . '/../includes/modals/product-modal.php'; ?>
 
-  <!-- INFO: FOOTER SECTION -->
+  <!-- SECTION: FOOTER SECTION -->
   <?php 
     require_once __DIR__ . '/../components/footer.php'; 
   ?>

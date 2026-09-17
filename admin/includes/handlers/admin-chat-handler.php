@@ -36,6 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     assign_conversation($pdo, $post_conversation_id, $_SESSION['u_id']);
     $message_id = add_chat_message($pdo, $post_conversation_id, 'admin', $_SESSION['u_id'], $reply_message);
 
+    $created_at_stmt = $pdo->prepare("SELECT created_at FROM chat_messages WHERE message_id = ?");
+    $created_at_stmt->execute([$message_id]);
+    $created_at = $created_at_stmt->fetchColumn() ?: date('Y-m-d H:i:s');
+
     $conversation = get_conversation($pdo, $post_conversation_id);
     if ($conversation) {
         notify_customer_of_chat_reply($pdo, $conversation, $reply_message);
@@ -47,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'message_id'  => $message_id,
             'sender_type' => 'admin',
             'message'     => $reply_message,
+            'created_at'  => $created_at,
         ],
     ]);
     exit;

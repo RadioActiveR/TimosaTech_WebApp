@@ -170,3 +170,7 @@ if (isset($pdo) && isset($_SESSION['u_id'])) {
     <?php require_once __DIR__ . '/../includes/widgets/chat-widget.php'; ?>
     <script src="../assets/js/chat-widget.js"></script>
   <?php endif; ?>
+
+  <?php if (!$is_admin_page): ?>
+    <script src="../assets/js/site-controls-watcher.js" defer></script>
+  <?php endif; ?>
